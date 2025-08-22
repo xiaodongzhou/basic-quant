@@ -1,0 +1,14 @@
+2025-08-22 05:28:48.759 | INFO     | __main__:main:263 - ============================================================
+2025-08-22 05:28:48.760 | INFO     | __main__:main:264 - VN.PY量化交易系统 - BACKTEST模式
+2025-08-22 05:28:48.760 | INFO     | __main__:main:265 - 策略: MA, 品种: BTCUSDT
+2025-08-22 05:28:48.760 | INFO     | __main__:main:266 - 时间范围: 2023-01-01 到 2023-12-31
+2025-08-22 05:28:48.760 | INFO     | __main__:main:267 - 数据间隔: 1h, 初始资金: 50,000.00
+2025-08-22 05:28:48.760 | INFO     | __main__:main:268 - ============================================================
+2025-08-22 05:28:48.761 | INFO     | data.data_manager:_init_database:52 - 数据库初始化完成: /home/user/webapp/data/database/market_data.db
+2025-08-22 05:28:48.761 | INFO     | data.data_manager:__init__:203 - 数据管理器初始化完成
+2025-08-22 05:28:48.761 | INFO     | __main__:run_backtest:27 - 开始下载数据: BTCUSDT (2023-01-01 to 2023-12-31)
+2025-08-22 05:28:48.765 | INFO     | data.data_manager:load_bars:101 - 加载了0条K线数据
+2025-08-22 05:28:48.765 | INFO     | data.data_manager:download_data:223 - 从BINANCE下载BTCUSDT数据: 2023-01-01 到 2023-12-31
+2025-08-22 05:28:48.848 | ERROR    | data.data_manager:fetch_klines:169 - 从Binance获取K线数据失败: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&startTime=1672531200000&endTime=1703980800000&limit=1000
+2025-08-22 05:28:48.848 | WARNING  | data.data_manager:download_data:234 - 未获取到BTCUSDT的数据
+2025-08-22 05:28:48.850 | ERROR    | __main__:run_backtest:39 - 未获取到数据，请检查参数设置

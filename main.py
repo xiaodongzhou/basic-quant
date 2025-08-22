@@ -44,47 +44,98 @@ def run_backtest(args):
         # 选择策略
         if args.strategy.lower() == 'ma':
             strategy = MovingAverageStrategy(
-                fast_period=args.fast_ma,
-                slow_period=args.slow_ma
+                name="MA回测策略",
+                symbol=args.symbol,
+                parameters={
+                    'fast_ma_period': args.fast_ma,
+                    'slow_ma_period': args.slow_ma,
+                    'volume': 1.0
+                }
             )
         else:
             logger.warning(f"策略类型 {args.strategy} 使用默认MA策略")
             strategy = MovingAverageStrategy(
-                fast_period=args.fast_ma,
-                slow_period=args.slow_ma
+                name="默认MA策略",
+                symbol=args.symbol,
+                parameters={
+                    'fast_ma_period': args.fast_ma,
+                    'slow_ma_period': args.slow_ma,
+                    'volume': 1.0
+                }
             )
         
-        # 简单回测逻辑（由于BacktestEngine模块缺失，这里实现基本回测）
-        logger.info(f"开始回测策略: {args.strategy}")
+        # 简化的回测逻辑（直接计算移动平均和信号）
+        logger.info(f"开始回测策略: {args.strategy} (MA{args.fast_ma}/{args.slow_ma})")
         
-        # 初始化策略
-        strategy.initialize(df)
+        # 重命名列以匹配期望格式
+        if 'close_price' in df.columns:
+            df = df.rename(columns={
+                'open_price': 'open',
+                'high_price': 'high', 
+                'low_price': 'low',
+                'close_price': 'close'
+            })
         
-        # 计算信号
-        signals = []
-        for i in range(len(df)):
-            current_data = df.iloc[:i+1]
-            signal = strategy.generate_signal(current_data.iloc[-1] if len(current_data) > 0 else None, current_data)
-            signals.append(signal)
+        # 直接计算移动平均策略（简化版本）
+        fast_period = args.fast_ma
+        slow_period = args.slow_ma
         
-        df['signal'] = signals
+        logger.info(f"计算MA{fast_period}和MA{slow_period}指标...")
         
-        # 计算简单回报
+        # 计算移动平均线
+        df['fast_ma'] = df['close'].rolling(window=fast_period).mean()
+        df['slow_ma'] = df['close'].rolling(window=slow_period).mean()
+        
+        # 生成交易信号
+        df['signal'] = 0
+        for i in range(slow_period, len(df)):
+            if (df['fast_ma'].iloc[i] > df['slow_ma'].iloc[i] and 
+                df['fast_ma'].iloc[i-1] <= df['slow_ma'].iloc[i-1]):
+                df.iloc[i, df.columns.get_loc('signal')] = 1  # 买入信号
+            elif (df['fast_ma'].iloc[i] < df['slow_ma'].iloc[i] and 
+                  df['fast_ma'].iloc[i-1] >= df['slow_ma'].iloc[i-1]):
+                df.iloc[i, df.columns.get_loc('signal')] = -1  # 卖出信号
+        
+        # 计算策略收益
         df['returns'] = df['close'].pct_change()
         df['strategy_returns'] = df['signal'].shift(1) * df['returns']
         
-        total_return = (1 + df['strategy_returns'].fillna(0)).prod() - 1
-        volatility = df['strategy_returns'].std() * (252 ** 0.5)  # 年化波动率
-        sharpe_ratio = df['strategy_returns'].mean() / df['strategy_returns'].std() * (252 ** 0.5) if df['strategy_returns'].std() > 0 else 0
+        # 计算累积收益
+        df['cumulative_returns'] = (1 + df['strategy_returns'].fillna(0)).cumprod()
+        df['benchmark_returns'] = (1 + df['returns'].fillna(0)).cumprod()
         
-        # 输出结果
-        logger.info("=" * 50)
-        logger.info("回测结果:")
-        logger.info(f"总回报率: {total_return:.4f}")
-        logger.info(f"年化波动率: {volatility:.4f}")
-        logger.info(f"夏普比率: {sharpe_ratio:.4f}")
-        logger.info(f"信号数量: {len([s for s in signals if s != 0])}")
-        logger.info("=" * 50)
+        # 计算性能指标
+        total_return = df['cumulative_returns'].iloc[-1] - 1
+        benchmark_return = df['benchmark_returns'].iloc[-1] - 1
+        volatility = df['strategy_returns'].std() * (365 * 24) ** 0.5  # 年化波动率(小时数据)
+        sharpe_ratio = (df['strategy_returns'].mean() / df['strategy_returns'].std() * 
+                       (365 * 24) ** 0.5) if df['strategy_returns'].std() > 0 else 0
+        max_drawdown = ((df['cumulative_returns'] / df['cumulative_returns'].expanding().max()) - 1).min()
+        
+        # 统计交易信号
+        buy_signals = len(df[df['signal'] > 0])
+        sell_signals = len(df[df['signal'] < 0])
+        
+        # 输出详细回测结果
+        logger.info("=" * 60)
+        logger.info("📊 回测结果详情")
+        logger.info("=" * 60)
+        logger.info(f"📈 策略表现:")
+        logger.info(f"   策略总收益率: {total_return:.4f} ({total_return*100:.2f}%)")
+        logger.info(f"   基准收益率: {benchmark_return:.4f} ({benchmark_return*100:.2f}%)")
+        logger.info(f"   超额收益: {(total_return-benchmark_return):.4f} ({(total_return-benchmark_return)*100:.2f}%)")
+        logger.info(f"")
+        logger.info(f"⚡ 风险指标:")
+        logger.info(f"   年化波动率: {volatility:.4f} ({volatility*100:.2f}%)")
+        logger.info(f"   夏普比率: {sharpe_ratio:.4f}")
+        logger.info(f"   最大回撤: {max_drawdown:.4f} ({max_drawdown*100:.2f}%)")
+        logger.info(f"")
+        logger.info(f"📋 交易统计:")
+        logger.info(f"   买入信号: {buy_signals}次")
+        logger.info(f"   卖出信号: {sell_signals}次")
+        logger.info(f"   数据周期: {df.index[0]} 到 {df.index[-1]}")
+        logger.info(f"   价格范围: ${df['close'].min():.2f} - ${df['close'].max():.2f}")
+        logger.info("=" * 60)
         
     except Exception as e:
         logger.error(f"回测执行出错: {e}")
