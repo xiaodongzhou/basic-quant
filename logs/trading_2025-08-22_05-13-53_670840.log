@@ -1,0 +1,13 @@
+2025-08-22 05:13:53.677 | INFO     | __main__:main:212 - ============================================================
+2025-08-22 05:13:53.678 | INFO     | __main__:main:213 - VN.PY量化交易系统 - DATA模式
+2025-08-22 05:13:53.678 | INFO     | __main__:main:214 - 策略: BB, 品种: ETHUSDT
+2025-08-22 05:13:53.678 | INFO     | __main__:main:215 - 时间范围: 2024-08-01 到 2024-08-05
+2025-08-22 05:13:53.678 | INFO     | __main__:main:216 - 数据间隔: 1h, 初始资金: 100,000.00
+2025-08-22 05:13:53.678 | INFO     | __main__:main:217 - ============================================================
+2025-08-22 05:13:53.678 | INFO     | __main__:download_data:141 - 开始下载数据: ETHUSDT
+2025-08-22 05:13:53.681 | INFO     | data.data_manager:_init_database:52 - 数据库初始化完成: /home/user/webapp/data/database/market_data.db
+2025-08-22 05:13:53.681 | INFO     | data.data_manager:__init__:203 - 数据管理器初始化完成
+2025-08-22 05:13:53.681 | INFO     | data.data_manager:download_data:223 - 从BINANCE下载ETHUSDT数据: 2024-08-01 到 2024-08-05
+2025-08-22 05:13:53.756 | ERROR    | data.data_manager:fetch_klines:169 - 从Binance获取K线数据失败: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&startTime=1722470400000&endTime=1722816000000&limit=1000
+2025-08-22 05:13:53.757 | WARNING  | data.data_manager:download_data:234 - 未获取到ETHUSDT的数据
+2025-08-22 05:13:53.759 | ERROR    | __main__:download_data:168 - 数据下载失败，请检查网络连接和参数设置

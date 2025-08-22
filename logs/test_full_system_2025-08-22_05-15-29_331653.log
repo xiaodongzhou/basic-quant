@@ -1,0 +1,98 @@
+2025-08-22 05:15:29.340 | INFO     | __main__:test_data_management:107 - ============================================================
+2025-08-22 05:15:29.340 | INFO     | __main__:test_data_management:108 - 🗃️  测试数据管理功能
+2025-08-22 05:15:29.340 | INFO     | __main__:test_data_management:109 - ============================================================
+2025-08-22 05:15:29.341 | INFO     | __main__:generate_realistic_btc_data:21 - 生成90天的BTC价格数据，起始价格: $42000
+2025-08-22 05:15:29.410 | INFO     | __main__:generate_realistic_btc_data:97 - 生成完成！数据范围:
+2025-08-22 05:15:29.410 | INFO     | __main__:generate_realistic_btc_data:98 -   时间: 2024-01-01 00:00:00 到 2024-03-31 00:00:00
+2025-08-22 05:15:29.412 | INFO     | __main__:generate_realistic_btc_data:99 -   价格: $4200.00 - $inf
+2025-08-22 05:15:29.412 | INFO     | __main__:generate_realistic_btc_data:100 -   总涨幅: inf%
+2025-08-22 05:15:29.413 | INFO     | __main__:generate_realistic_btc_data:101 -   数据条数: 2161
+2025-08-22 05:15:29.414 | INFO     | data.data_manager:_init_database:52 - 数据库初始化完成: /home/user/webapp/data/database/market_data.db
+2025-08-22 05:15:29.414 | INFO     | data.data_manager:__init__:203 - 数据管理器初始化完成
+2025-08-22 05:15:29.415 | INFO     | __main__:test_data_management:118 - 保存数据到SQLite数据库...
+2025-08-22 05:15:29.622 | ERROR    | data.data_manager:save_bars:80 - 保存K线数据失败: NOT NULL constraint failed: bar_data.low_price
+2025-08-22 05:15:29.623 | INFO     | __main__:test_data_management:138 - 从数据库读取并验证数据...
+2025-08-22 05:15:29.653 | INFO     | data.data_manager:load_bars:101 - 加载了1668条K线数据
+2025-08-22 05:15:29.654 | INFO     | __main__:test_data_management:146 - ✅ 数据管理测试成功!
+2025-08-22 05:15:29.654 | INFO     | __main__:test_data_management:147 -    原始数据: 2161 条
+2025-08-22 05:15:29.654 | INFO     | __main__:test_data_management:148 -    数据库存储: 2161 条
+2025-08-22 05:15:29.655 | INFO     | __main__:test_data_management:149 -    读取验证: 1668 条
+2025-08-22 05:15:29.656 | INFO     | __main__:test_strategy_backtest:155 - ============================================================
+2025-08-22 05:15:29.657 | INFO     | __main__:test_strategy_backtest:156 - 📈 测试策略回测功能
+2025-08-22 05:15:29.657 | INFO     | __main__:test_strategy_backtest:157 - ============================================================
+2025-08-22 05:15:29.658 | INFO     | __main__:test_strategy_backtest:166 - 计算移动平均线: MA12 和 MA26
+2025-08-22 05:15:29.931 | INFO     | __main__:test_strategy_backtest:206 - 📊 回测结果详情:
+2025-08-22 05:15:29.931 | INFO     | __main__:test_strategy_backtest:207 -    测试期间: 2024-01-01 到 2024-03-31
+2025-08-22 05:15:29.932 | INFO     | __main__:test_strategy_backtest:208 -    数据点数: 2161 个小时
+2025-08-22 05:15:29.932 | INFO     | __main__:test_strategy_backtest:209 -    
+2025-08-22 05:15:29.932 | INFO     | __main__:test_strategy_backtest:210 - 📈 收益表现:
+2025-08-22 05:15:29.932 | INFO     | __main__:test_strategy_backtest:211 -    策略总收益率: 0.7838 (78.38%)
+2025-08-22 05:15:29.932 | INFO     | __main__:test_strategy_backtest:212 -    基准收益率: inf (inf%)
+2025-08-22 05:15:29.932 | INFO     | __main__:test_strategy_backtest:213 -    超额收益: -inf (-inf%)
+2025-08-22 05:15:29.932 | INFO     | __main__:test_strategy_backtest:214 -    
+2025-08-22 05:15:29.932 | INFO     | __main__:test_strategy_backtest:215 - ⚡ 风险指标:
+2025-08-22 05:15:29.933 | INFO     | __main__:test_strategy_backtest:216 -    年化波动率: 0.6330 (63.30%)
+2025-08-22 05:15:29.933 | INFO     | __main__:test_strategy_backtest:217 -    夏普比率: 5.0984
+2025-08-22 05:15:29.933 | INFO     | __main__:test_strategy_backtest:218 -    最大回撤: 0.0000 (0.00%)
+2025-08-22 05:15:29.933 | INFO     | __main__:test_strategy_backtest:219 -    
+2025-08-22 05:15:29.933 | INFO     | __main__:test_strategy_backtest:220 - 📋 交易统计:
+2025-08-22 05:15:29.933 | INFO     | __main__:test_strategy_backtest:221 -    买入信号: 3 次
+2025-08-22 05:15:29.933 | INFO     | __main__:test_strategy_backtest:222 -    卖出信号: 3 次
+2025-08-22 05:15:29.933 | INFO     | __main__:test_strategy_backtest:223 -    总信号数: 6 次
+2025-08-22 05:15:29.934 | INFO     | __main__:test_strategy_backtest:224 -    信号频率: 0.28% (每小时)
+2025-08-22 05:15:29.934 | INFO     | __main__:test_strategy_backtest:227 -    
+2025-08-22 05:15:29.934 | INFO     | __main__:test_strategy_backtest:228 - 💰 价格统计:
+2025-08-22 05:15:29.934 | INFO     | __main__:test_strategy_backtest:229 -    起始价格: $42,000.00
+2025-08-22 05:15:29.934 | INFO     | __main__:test_strategy_backtest:230 -    结束价格: $inf
+2025-08-22 05:15:29.935 | INFO     | __main__:test_strategy_backtest:231 -    最高价格: $inf
+2025-08-22 05:15:29.935 | INFO     | __main__:test_strategy_backtest:232 -    最低价格: $4,200.00
+2025-08-22 05:15:29.935 | INFO     | __main__:test_strategy_backtest:234 - ✅ 策略回测测试成功!
+2025-08-22 05:15:29.935 | INFO     | __main__:test_live_trading_simulation:240 - ============================================================
+2025-08-22 05:15:29.935 | INFO     | __main__:test_live_trading_simulation:241 - 💰 测试实盘交易模拟
+2025-08-22 05:15:29.936 | INFO     | __main__:test_live_trading_simulation:242 - ============================================================
+2025-08-22 05:15:29.939 | INFO     | trading.order_manager:__init__:168 - 订单管理器初始化完成
+2025-08-22 05:15:29.940 | INFO     | data.data_manager:_init_database:52 - 数据库初始化完成: /home/user/webapp/data/database/market_data.db
+2025-08-22 05:15:29.940 | INFO     | data.data_manager:__init__:203 - 数据管理器初始化完成
+2025-08-22 05:15:29.940 | INFO     | trading.live_engine:__init__:143 - 实盘交易引擎初始化完成，初始资金: 100000
+2025-08-22 05:15:29.940 | INFO     | __main__:test_live_trading_simulation:250 - 交易引擎初始化完成，初始资金: $100,000
+2025-08-22 05:15:29.940 | INFO     | __main__:test_live_trading_simulation:261 - 执行模拟交易序列:
+2025-08-22 05:15:29.940 | INFO     | __main__:test_live_trading_simulation:263 -    交易 1: BUY 0.5 BTCUSDT @ $45000 (LIMIT)
+2025-08-22 05:15:29.941 | INFO     | trading.order_manager:create_order:182 - 创建订单: f83a34e0 BTCUSDT BUY 0.5@45000
+2025-08-22 05:15:29.941 | INFO     | trading.order_manager:submit_order:199 - 提交订单: f83a34e0
+2025-08-22 05:15:29.941 | INFO     | trading.live_engine:place_order:308 - 下单成功: f83a34e0
+2025-08-22 05:15:29.941 | INFO     | __main__:test_live_trading_simulation:267 -       ✅ 订单创建成功: f83a34e0
+2025-08-22 05:15:29.941 | INFO     | __main__:test_live_trading_simulation:263 -    交易 2: BUY 2.0 ETHUSDT @ $3000 (MARKET)
+2025-08-22 05:15:29.941 | INFO     | trading.order_manager:create_order:182 - 创建订单: 3857daac ETHUSDT BUY 2.0@3000
+2025-08-22 05:15:29.941 | INFO     | trading.order_manager:submit_order:199 - 提交订单: 3857daac
+2025-08-22 05:15:29.941 | INFO     | trading.live_engine:place_order:308 - 下单成功: 3857daac
+2025-08-22 05:15:29.941 | INFO     | __main__:test_live_trading_simulation:267 -       ✅ 订单创建成功: 3857daac
+2025-08-22 05:15:29.942 | INFO     | __main__:test_live_trading_simulation:263 -    交易 3: SELL 0.3 BTCUSDT @ $47000 (LIMIT)
+2025-08-22 05:15:29.942 | INFO     | trading.order_manager:create_order:182 - 创建订单: fada5acb BTCUSDT SELL 0.3@47000
+2025-08-22 05:15:29.942 | INFO     | trading.order_manager:submit_order:199 - 提交订单: fada5acb
+2025-08-22 05:15:29.942 | INFO     | trading.live_engine:place_order:308 - 下单成功: fada5acb
+2025-08-22 05:15:29.942 | INFO     | __main__:test_live_trading_simulation:267 -       ✅ 订单创建成功: fada5acb
+2025-08-22 05:15:29.942 | INFO     | __main__:test_live_trading_simulation:263 -    交易 4: BUY 1000 ADAUSDT @ $0.5 (MARKET)
+2025-08-22 05:15:29.942 | INFO     | trading.order_manager:create_order:182 - 创建订单: 943c55f1 ADAUSDT BUY 1000@0.5
+2025-08-22 05:15:29.942 | INFO     | trading.order_manager:submit_order:199 - 提交订单: 943c55f1
+2025-08-22 05:15:29.942 | INFO     | trading.live_engine:place_order:308 - 下单成功: 943c55f1
+2025-08-22 05:15:29.942 | INFO     | __main__:test_live_trading_simulation:267 -       ✅ 订单创建成功: 943c55f1
+2025-08-22 05:15:29.943 | INFO     | __main__:test_live_trading_simulation:263 -    交易 5: SELL 1.5 ETHUSDT @ $3200 (LIMIT)
+2025-08-22 05:15:29.943 | INFO     | trading.order_manager:create_order:182 - 创建订单: cf85d362 ETHUSDT SELL 1.5@3200
+2025-08-22 05:15:29.943 | INFO     | trading.order_manager:submit_order:199 - 提交订单: cf85d362
+2025-08-22 05:15:29.943 | INFO     | trading.live_engine:place_order:308 - 下单成功: cf85d362
+2025-08-22 05:15:29.943 | INFO     | __main__:test_live_trading_simulation:267 -       ✅ 订单创建成功: cf85d362
+2025-08-22 05:15:29.943 | INFO     | __main__:test_live_trading_simulation:276 - 
+2025-08-22 05:15:29.943 | INFO     | __main__:test_live_trading_simulation:277 - 📊 最终账户状态:
+2025-08-22 05:15:29.943 | INFO     | __main__:test_live_trading_simulation:278 -    账户余额: $100,000.00
+2025-08-22 05:15:29.943 | INFO     | __main__:test_live_trading_simulation:279 -    可用资金: $71,000.00
+2025-08-22 05:15:29.943 | INFO     | __main__:test_live_trading_simulation:280 -    冻结资金: $29,000.00
+2025-08-22 05:15:29.943 | INFO     | __main__:test_live_trading_simulation:281 -    总盈亏: $0.00
+2025-08-22 05:15:29.944 | INFO     | __main__:test_live_trading_simulation:282 -    
+2025-08-22 05:15:29.944 | INFO     | __main__:test_live_trading_simulation:283 - 📋 持仓信息:
+2025-08-22 05:15:29.944 | INFO     | __main__:test_live_trading_simulation:288 -    当前无持仓
+2025-08-22 05:15:29.944 | INFO     | __main__:test_live_trading_simulation:289 -    
+2025-08-22 05:15:29.944 | INFO     | __main__:test_live_trading_simulation:290 - ⚙️  引擎状态:
+2025-08-22 05:15:29.944 | INFO     | __main__:test_live_trading_simulation:291 -    运行状态: 正常
+2025-08-22 05:15:29.944 | INFO     | __main__:test_live_trading_simulation:292 -    订单总数: 0
+2025-08-22 05:15:29.944 | INFO     | __main__:test_live_trading_simulation:293 -    成功订单: 0
+2025-08-22 05:15:29.944 | INFO     | __main__:test_live_trading_simulation:295 - ✅ 实盘交易模拟测试成功!

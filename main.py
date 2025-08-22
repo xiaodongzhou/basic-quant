@@ -157,7 +157,13 @@ def download_data(args):
             logger.info(f"数据下载完成!")
             logger.info(f"时间范围: {df.index[0]} 到 {df.index[-1]}")
             logger.info(f"数据条数: {len(df)}")
-            logger.info(f"最新价格: {df['close'].iloc[-1]:.4f}")
+            # 检查列名并使用正确的列
+            if 'close_price' in df.columns:
+                logger.info(f"最新价格: {df['close_price'].iloc[-1]:.4f}")
+            elif 'close' in df.columns:
+                logger.info(f"最新价格: {df['close'].iloc[-1]:.4f}")
+            else:
+                logger.info(f"可用列: {list(df.columns)}")
         else:
             logger.error("数据下载失败，请检查网络连接和参数设置")
             
