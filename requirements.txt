@@ -1,8 +1,9 @@
 # VN.PY量化交易框架依赖
-vnpy==3.9.2
-vnpy-binance==1.0.26
-vnpy-ctp==6.6.9
-vnpy-ctastrategy==1.0.25
+# 注意：我们的系统是独立实现，不直接依赖vnpy，以下仅作参考
+# vnpy==3.9.2
+# vnpy-binance==2025.6.17  # 最新可用版本
+# vnpy-ctp==6.6.9
+# vnpy-ctastrategy==1.0.25
 
 # 数据处理和分析
 pandas>=1.5.0

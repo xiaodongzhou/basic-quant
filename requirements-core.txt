@@ -1,0 +1,37 @@
+# 核心量化交易系统依赖
+# 这个文件包含我们系统实际运行所需的最小依赖集
+
+# 数据处理和分析
+pandas>=1.5.0
+numpy>=1.23.0
+matplotlib>=3.6.0
+
+# 网络请求（用于API调用）
+requests>=2.28.0
+
+# 配置管理
+python-dotenv>=0.21.0
+
+# 日志系统
+loguru>=0.6.0
+
+# 时间处理
+python-dateutil>=2.8.0
+pytz>=2022.6
+
+# 可选依赖（用于扩展功能）
+# seaborn>=0.12.0        # 数据可视化增强
+# plotly>=5.11.0         # 交互式图表
+# websocket-client>=1.4.0 # WebSocket连接
+# ccxt>=2.5.0            # 多交易所API
+# scikit-learn>=1.1.0    # 机器学习
+# aiohttp>=3.8.0         # 异步HTTP客户端
+# pymongo>=4.3.0         # MongoDB数据库
+# redis>=4.3.0           # Redis缓存
+# pyyaml>=6.0            # YAML配置文件支持
+
+# VN.PY相关（可选，如果需要与VN.PY生态集成）
+# vnpy==3.9.2
+# vnpy-binance==2025.6.17
+# vnpy-ctp==6.6.9
+# vnpy-ctastrategy==1.0.25

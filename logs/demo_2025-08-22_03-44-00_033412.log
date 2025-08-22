@@ -1,0 +1,118 @@
+2025-08-22 03:44:00.040 | INFO     | __main__:demo_data_management:75 - ============================================================
+2025-08-22 03:44:00.041 | INFO     | __main__:demo_data_management:76 - 1. 数据管理功能演示
+2025-08-22 03:44:00.041 | INFO     | __main__:demo_data_management:77 - ============================================================
+2025-08-22 03:44:00.041 | INFO     | __main__:generate_demo_data:19 - 生成7天的BTCUSDT模拟数据
+2025-08-22 03:44:00.108 | INFO     | __main__:generate_demo_data:68 - 生成了169条数据记录
+2025-08-22 03:44:00.114 | INFO     | __main__:generate_demo_data:69 - 价格范围: 37516.09 - 54126.37
+2025-08-22 03:44:00.124 | INFO     | data.data_manager:_init_database:52 - 数据库初始化完成: /home/user/webapp/data/database/market_data.db
+2025-08-22 03:44:00.124 | INFO     | data.data_manager:__init__:203 - 数据管理器初始化完成
+2025-08-22 03:44:00.124 | INFO     | __main__:demo_data_management:86 - 存储数据到数据库...
+2025-08-22 03:44:00.139 | INFO     | data.data_manager:save_bars:78 - 保存了169条K线数据
+2025-08-22 03:44:00.139 | INFO     | __main__:demo_data_management:107 - 从数据库读取数据...
+2025-08-22 03:44:00.151 | INFO     | data.data_manager:load_bars:101 - 加载了169条K线数据
+2025-08-22 03:44:00.152 | INFO     | __main__:demo_data_management:115 - 成功从数据库读取169条记录
+2025-08-22 03:44:00.152 | INFO     | __main__:demo_data_management:116 - 数据时间范围: 2025-08-15 03:44:00 到 2025-08-22 03:44:00
+2025-08-22 03:44:00.153 | INFO     | __main__:demo_data_management:117 - 数据列名: ['symbol', 'exchange', 'interval', 'open_price', 'high_price', 'low_price', 'close_price', 'volume', 'turnover', 'open_interest']
+2025-08-22 03:44:00.168 | INFO     | __main__:demo_strategy_backtest:132 - ============================================================
+2025-08-22 03:44:00.168 | INFO     | __main__:demo_strategy_backtest:133 - 2. 策略回测功能演示
+2025-08-22 03:44:00.168 | INFO     | __main__:demo_strategy_backtest:134 - ============================================================
+2025-08-22 03:44:00.168 | INFO     | __main__:demo_strategy_backtest:136 - 计算移动平均策略信号...
+2025-08-22 03:44:00.197 | INFO     | __main__:demo_strategy_backtest:174 - 回测结果:
+2025-08-22 03:44:00.197 | INFO     | __main__:demo_strategy_backtest:175 - 数据范围: 2025-08-15 03:44:00 到 2025-08-22 03:44:00
+2025-08-22 03:44:00.197 | INFO     | __main__:demo_strategy_backtest:176 - 总收益率: -0.1139 (-11.39%)
+2025-08-22 03:44:00.197 | INFO     | __main__:demo_strategy_backtest:177 - 年化波动率: 0.3581 (35.81%)
+2025-08-22 03:44:00.197 | INFO     | __main__:demo_strategy_backtest:178 - 夏普比率: -17.4223
+2025-08-22 03:44:00.197 | INFO     | __main__:demo_strategy_backtest:179 - 最大回撤: -0.1139 (-11.39%)
+2025-08-22 03:44:00.199 | INFO     | __main__:demo_strategy_backtest:184 - 买入信号: 5次, 卖出信号: 4次
+2025-08-22 03:44:00.199 | INFO     | __main__:demo_strategy_backtest:187 - 最近5个交易日指标:
+2025-08-22 03:44:00.200 | INFO     | __main__:demo_strategy_backtest:190 -   08-21 23:44: 价格=40265.80, 快线=39559.14, 慢线=38876.99, 信号=0
+2025-08-22 03:44:00.200 | INFO     | __main__:demo_strategy_backtest:190 -   08-22 00:44: 价格=40602.25, 快线=39953.46, 慢线=38927.88, 信号=0
+2025-08-22 03:44:00.200 | INFO     | __main__:demo_strategy_backtest:190 -   08-22 01:44: 价格=41273.86, 快线=40359.71, 慢线=39061.11, 信号=0
+2025-08-22 03:44:00.201 | INFO     | __main__:demo_strategy_backtest:190 -   08-22 02:44: 价格=42843.75, 快线=40897.29, 慢线=39323.62, 信号=0
+2025-08-22 03:44:00.201 | INFO     | __main__:demo_strategy_backtest:190 -   08-22 03:44: 价格=42637.76, 快线=41524.68, 慢线=39556.02, 信号=0
+2025-08-22 03:44:00.201 | INFO     | __main__:demo_live_trading:197 - ============================================================
+2025-08-22 03:44:00.201 | INFO     | __main__:demo_live_trading:198 - 3. 实盘交易模拟演示
+2025-08-22 03:44:00.201 | INFO     | __main__:demo_live_trading:199 - ============================================================
+2025-08-22 03:44:00.201 | INFO     | trading.order_manager:__init__:168 - 订单管理器初始化完成
+2025-08-22 03:44:00.202 | INFO     | data.data_manager:_init_database:52 - 数据库初始化完成: /home/user/webapp/data/database/market_data.db
+2025-08-22 03:44:00.203 | INFO     | data.data_manager:__init__:203 - 数据管理器初始化完成
+2025-08-22 03:44:00.203 | INFO     | trading.live_engine:__init__:143 - 实盘交易引擎初始化完成，初始资金: 100000
+2025-08-22 03:44:00.203 | INFO     | __main__:demo_live_trading:207 - 启动实盘交易模拟...
+2025-08-22 03:44:00.203 | INFO     | __main__:demo_live_trading:208 - 模拟交易5个周期...
+2025-08-22 03:44:00.203 | INFO     | __main__:demo_live_trading:212 - 
+--- 第1个交易周期 ---
+2025-08-22 03:44:00.203 | INFO     | __main__:demo_live_trading:218 - 当前价格: 49027.73
+2025-08-22 03:44:00.203 | INFO     | __main__:demo_live_trading:222 - 策略信号: 买入
+2025-08-22 03:44:00.203 | INFO     | trading.order_manager:create_order:182 - 创建订单: 4dc3a186 BTCUSDT BUY 1.0@49027.731452275926
+2025-08-22 03:44:00.203 | INFO     | trading.order_manager:submit_order:199 - 提交订单: 4dc3a186
+2025-08-22 03:44:00.203 | INFO     | trading.live_engine:place_order:308 - 下单成功: 4dc3a186
+2025-08-22 03:44:00.203 | INFO     | __main__:demo_live_trading:225 - 买入订单已提交: 4dc3a186
+2025-08-22 03:44:00.203 | INFO     | __main__:demo_live_trading:236 - 账户余额: 100000.00
+2025-08-22 03:44:00.203 | INFO     | __main__:demo_live_trading:237 - 可用资金: 50972.27
+2025-08-22 03:44:00.204 | INFO     | __main__:demo_live_trading:238 - 总盈亏: 0.00
+2025-08-22 03:44:00.204 | INFO     | __main__:demo_live_trading:239 - 持仓数量: 0
+2025-08-22 03:44:00.204 | INFO     | __main__:demo_live_trading:249 - 引擎状态: unknown
+2025-08-22 03:44:00.204 | INFO     | __main__:demo_live_trading:250 - 总订单数: 0
+2025-08-22 03:44:01.204 | INFO     | __main__:demo_live_trading:212 - 
+--- 第2个交易周期 ---
+2025-08-22 03:44:01.205 | INFO     | __main__:demo_live_trading:218 - 当前价格: 50079.48
+2025-08-22 03:44:01.205 | INFO     | __main__:demo_live_trading:227 - 策略信号: 卖出
+2025-08-22 03:44:01.205 | INFO     | trading.order_manager:create_order:182 - 创建订单: 0993d84c BTCUSDT SELL 1.0@50079.48245181754
+2025-08-22 03:44:01.205 | INFO     | trading.order_manager:submit_order:199 - 提交订单: 0993d84c
+2025-08-22 03:44:01.205 | INFO     | trading.live_engine:place_order:308 - 下单成功: 0993d84c
+2025-08-22 03:44:01.205 | INFO     | __main__:demo_live_trading:230 - 卖出订单已提交: 0993d84c
+2025-08-22 03:44:01.206 | INFO     | __main__:demo_live_trading:236 - 账户余额: 100000.00
+2025-08-22 03:44:01.206 | INFO     | __main__:demo_live_trading:237 - 可用资金: 50972.27
+2025-08-22 03:44:01.206 | INFO     | __main__:demo_live_trading:238 - 总盈亏: 0.00
+2025-08-22 03:44:01.206 | INFO     | __main__:demo_live_trading:239 - 持仓数量: 0
+2025-08-22 03:44:01.206 | INFO     | __main__:demo_live_trading:249 - 引擎状态: unknown
+2025-08-22 03:44:01.206 | INFO     | __main__:demo_live_trading:250 - 总订单数: 0
+2025-08-22 03:44:02.207 | INFO     | __main__:demo_live_trading:212 - 
+--- 第3个交易周期 ---
+2025-08-22 03:44:02.207 | INFO     | __main__:demo_live_trading:218 - 当前价格: 51523.79
+2025-08-22 03:44:02.207 | INFO     | __main__:demo_live_trading:222 - 策略信号: 买入
+2025-08-22 03:44:02.207 | WARNING  | trading.live_engine:place_order:298 - 资金不足，无法买入 BTCUSDT
+2025-08-22 03:44:02.207 | INFO     | __main__:demo_live_trading:236 - 账户余额: 100000.00
+2025-08-22 03:44:02.207 | INFO     | __main__:demo_live_trading:237 - 可用资金: 50972.27
+2025-08-22 03:44:02.207 | INFO     | __main__:demo_live_trading:238 - 总盈亏: 0.00
+2025-08-22 03:44:02.208 | INFO     | __main__:demo_live_trading:239 - 持仓数量: 0
+2025-08-22 03:44:02.208 | INFO     | __main__:demo_live_trading:249 - 引擎状态: unknown
+2025-08-22 03:44:02.208 | INFO     | __main__:demo_live_trading:250 - 总订单数: 0
+2025-08-22 03:44:03.209 | INFO     | __main__:demo_live_trading:212 - 
+--- 第4个交易周期 ---
+2025-08-22 03:44:03.209 | INFO     | __main__:demo_live_trading:218 - 当前价格: 47543.25
+2025-08-22 03:44:03.209 | INFO     | __main__:demo_live_trading:227 - 策略信号: 卖出
+2025-08-22 03:44:03.209 | INFO     | trading.order_manager:create_order:182 - 创建订单: 11aefa36 BTCUSDT SELL 1.0@47543.25294313652
+2025-08-22 03:44:03.209 | INFO     | trading.order_manager:submit_order:199 - 提交订单: 11aefa36
+2025-08-22 03:44:03.209 | INFO     | trading.live_engine:place_order:308 - 下单成功: 11aefa36
+2025-08-22 03:44:03.210 | INFO     | __main__:demo_live_trading:230 - 卖出订单已提交: 11aefa36
+2025-08-22 03:44:03.210 | INFO     | __main__:demo_live_trading:236 - 账户余额: 100000.00
+2025-08-22 03:44:03.210 | INFO     | __main__:demo_live_trading:237 - 可用资金: 50972.27
+2025-08-22 03:44:03.210 | INFO     | __main__:demo_live_trading:238 - 总盈亏: 0.00
+2025-08-22 03:44:03.211 | INFO     | __main__:demo_live_trading:239 - 持仓数量: 0
+2025-08-22 03:44:03.211 | INFO     | __main__:demo_live_trading:249 - 引擎状态: unknown
+2025-08-22 03:44:03.211 | INFO     | __main__:demo_live_trading:250 - 总订单数: 0
+2025-08-22 03:44:04.211 | INFO     | __main__:demo_live_trading:212 - 
+--- 第5个交易周期 ---
+2025-08-22 03:44:04.212 | INFO     | __main__:demo_live_trading:218 - 当前价格: 49189.49
+2025-08-22 03:44:04.212 | INFO     | __main__:demo_live_trading:222 - 策略信号: 买入
+2025-08-22 03:44:04.212 | INFO     | trading.order_manager:create_order:182 - 创建订单: d4f719ea BTCUSDT BUY 1.0@49189.49415302078
+2025-08-22 03:44:04.212 | INFO     | trading.order_manager:submit_order:199 - 提交订单: d4f719ea
+2025-08-22 03:44:04.212 | INFO     | trading.live_engine:place_order:308 - 下单成功: d4f719ea
+2025-08-22 03:44:04.212 | INFO     | __main__:demo_live_trading:225 - 买入订单已提交: d4f719ea
+2025-08-22 03:44:04.213 | INFO     | __main__:demo_live_trading:236 - 账户余额: 100000.00
+2025-08-22 03:44:04.213 | INFO     | __main__:demo_live_trading:237 - 可用资金: 1782.77
+2025-08-22 03:44:04.213 | INFO     | __main__:demo_live_trading:238 - 总盈亏: 0.00
+2025-08-22 03:44:04.213 | INFO     | __main__:demo_live_trading:239 - 持仓数量: 0
+2025-08-22 03:44:04.213 | INFO     | __main__:demo_live_trading:249 - 引擎状态: unknown
+2025-08-22 03:44:04.213 | INFO     | __main__:demo_live_trading:250 - 总订单数: 0
+2025-08-22 03:44:05.213 | INFO     | __main__:demo_live_trading:255 - 
+最终交易统计:
+2025-08-22 03:44:05.214 | INFO     | __main__:demo_live_trading:259 - 总订单数: 0
+2025-08-22 03:44:05.214 | INFO     | __main__:demo_live_trading:260 - 成功交易数: 0
+2025-08-22 03:44:05.214 | INFO     | __main__:demo_live_trading:261 - 引擎运行时间: unknown
+2025-08-22 03:44:05.214 | INFO     | __main__:demo_live_trading:263 - 最终账户余额: 100000.00
+2025-08-22 03:44:05.214 | INFO     | __main__:demo_live_trading:264 - 总盈亏: 0.00
+2025-08-22 03:44:05.214 | INFO     | __main__:main:283 - ============================================================
+2025-08-22 03:44:05.214 | INFO     | __main__:main:284 - ✅ 完整系统演示成功完成!
+2025-08-22 03:44:05.214 | INFO     | __main__:main:285 - ============================================================
