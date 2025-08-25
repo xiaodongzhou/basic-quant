@@ -298,3 +298,9 @@ class DataManager:
         """关闭数据管理器"""
         self.db_manager.close()
         logger.info("数据管理器已关闭")
+
+# 为了向后兼容，保持原有的DataManager类
+# 新项目建议使用MultiMarketDataManager
+class LegacyDataManager(DataManager):
+    """传统数据管理器（向后兼容）"""
+    pass
