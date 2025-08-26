@@ -21,6 +21,20 @@ def calculate_ema(data: pd.Series, period: int) -> pd.Series:
     return data.ewm(span=period, adjust=False).mean()
 
 
+def calculate_sma(data: pd.Series, period: int) -> pd.Series:
+    """
+    计算简单移动平均线 (SMA)
+    
+    Args:
+        data: 价格数据序列
+        period: 计算周期
+    
+    Returns:
+        SMA值序列
+    """
+    return data.rolling(window=period).mean()
+
+
 def calculate_adx(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> Tuple[pd.Series, pd.Series, pd.Series]:
     """
     计算平均方向指数 (ADX) 及相关指标
@@ -47,28 +61,31 @@ def calculate_adx(high: pd.Series, low: pd.Series, close: pd.Series, period: int
     plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0)
     minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0)
     
-    # 使用指数移动平均进行平滑（更稳定）
-    alpha = 2.0 / (period + 1)
+    # 转换为Series并填充初始NaN
+    tr = pd.Series(tr, index=high.index).fillna(0)
+    plus_dm = pd.Series(plus_dm, index=high.index).fillna(0)
+    minus_dm = pd.Series(minus_dm, index=high.index).fillna(0)
     
-    # 计算平滑的TR和DM
-    tr_smooth = pd.Series(tr).ewm(alpha=alpha, adjust=False).mean()
-    plus_dm_smooth = pd.Series(plus_dm).ewm(alpha=alpha, adjust=False).mean()
-    minus_dm_smooth = pd.Series(minus_dm).ewm(alpha=alpha, adjust=False).mean()
+    # 使用简单移动平均进行平滑
+    tr_smooth = tr.rolling(window=period, min_periods=1).mean()
+    plus_dm_smooth = plus_dm.rolling(window=period, min_periods=1).mean()
+    minus_dm_smooth = minus_dm.rolling(window=period, min_periods=1).mean()
     
     # 计算方向性指标 (+DI, -DI)
-    plus_di = 100 * (plus_dm_smooth / tr_smooth)
-    minus_di = 100 * (minus_dm_smooth / tr_smooth)
+    plus_di = 100 * (plus_dm_smooth / tr_smooth).fillna(0)
+    minus_di = 100 * (minus_dm_smooth / tr_smooth).fillna(0)
     
     # 处理除零情况
-    plus_di = plus_di.fillna(0)
-    minus_di = minus_di.fillna(0)
+    plus_di = plus_di.replace([np.inf, -np.inf], 0).fillna(0)
+    minus_di = minus_di.replace([np.inf, -np.inf], 0).fillna(0)
     
     # 计算方向性移动指数 (DX)
     di_sum = plus_di + minus_di
     dx = np.where(di_sum > 0, 100 * np.abs(plus_di - minus_di) / di_sum, 0)
+    dx = pd.Series(dx, index=high.index).fillna(0)
     
     # 计算平均方向指数 (ADX)
-    adx = pd.Series(dx).ewm(alpha=alpha, adjust=False).mean()
+    adx = dx.rolling(window=period, min_periods=1).mean()
     
     return adx, plus_di, minus_di
 

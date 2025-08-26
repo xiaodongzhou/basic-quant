@@ -5,10 +5,10 @@
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List
-import talib
 from loguru import logger
 
 from ..three_principle_strategy import DirectionAnalyzer, TrendDirection
+from ..indicators import calculate_ema, calculate_sma
 
 class MovingAverageDirectionAnalyzer(DirectionAnalyzer):
     """基于移动平均线的方向分析器"""
