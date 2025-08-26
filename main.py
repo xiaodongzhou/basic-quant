@@ -18,6 +18,8 @@ from data.data_manager import DataManager
 from trading.live_engine import LiveEngine
 from strategies.moving_average_strategy import MovingAverageStrategy
 from strategies.base_strategy import BaseStrategy
+# 导入新的三原则策略
+from strategies.trend_following_strategy import TrendFollowingStrategy, BreakoutStrategy, MeanReversionStrategy
 
 def run_backtest(args):
     """运行回测"""
@@ -50,6 +52,38 @@ def run_backtest(args):
                     'fast_ma_period': args.fast_ma,
                     'slow_ma_period': args.slow_ma,
                     'volume': 1.0
+                }
+            )
+        elif args.strategy.lower() == 'trend':
+            # 三原则趋势跟踪策略
+            strategy = TrendFollowingStrategy(
+                name="趋势跟踪策略",
+                symbol=args.symbol,
+                parameters={
+                    'ma_short_period': args.fast_ma,
+                    'ma_long_period': args.slow_ma,
+                    'volume': 1.0,
+                    'account_balance': args.capital
+                }
+            )
+        elif args.strategy.lower() == 'breakout':
+            # 三原则突破策略
+            strategy = BreakoutStrategy(
+                name="突破策略",
+                symbol=args.symbol,
+                parameters={
+                    'volume': 1.0,
+                    'account_balance': args.capital
+                }
+            )
+        elif args.strategy.lower() == 'meanrev':
+            # 三原则均值回归策略
+            strategy = MeanReversionStrategy(
+                name="均值回归策略",
+                symbol=args.symbol,
+                parameters={
+                    'volume': 1.0,
+                    'account_balance': args.capital
                 }
             )
         else:
@@ -290,8 +324,8 @@ def main():
                        help='运行模式: backtest(回测), live(实盘), data(数据下载)')
     
     # 回测参数
-    parser.add_argument('--strategy', type=str, default='bb', 
-                       help='策略类型: ma, rsi, bb')
+    parser.add_argument('--strategy', type=str, default='ma', 
+                       help='策略类型: ma(移动平均), trend(趋势跟踪), breakout(突破), meanrev(均值回归)')
     parser.add_argument('--symbol', type=str, default='BTCUSDT',
                        help='交易品种')
     parser.add_argument('--start', type=str, default='2023-01-01',
