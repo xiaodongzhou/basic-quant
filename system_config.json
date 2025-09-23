@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "name": "极简期货量化交易系统",
+    "version": "1.0.0",
+    "created": "2025-01-22",
+    "milestone": "1.1"
+  },
+  "environment": {
+    "type": "simulation",
+    "python_version": "3.12.11",
+    "capabilities": {
+      "data_processing": true,
+      "file_operations": true,
+      "threading": true,
+      "json_config": true
+    }
+  },
+  "gateway": {
+    "name": "SIMULATION",
+    "description": "模拟交易网关",
+    "settings": {
+      "mode": "simulation",
+      "symbols": ["rb2405", "i2405", "j2405"],
+      "trading_hours": "09:00-15:00",
+      "server": "simulation_server",
+      "user": "sim_user",
+      "password": "sim_pass"
+    }
+  },
+  "contracts": {
+    "rb": {
+      "name": "螺纹钢",
+      "data_contract": "rb_weighted",
+      "trade_contract": "rb2405",
+      "exchange": "SHFE",
+      "multiplier": 10,
+      "tick_size": 1.0
+    },
+    "i": {
+      "name": "铁矿石",
+      "data_contract": "i_weighted", 
+      "trade_contract": "i2405",
+      "exchange": "DCE",
+      "multiplier": 100,
+      "tick_size": 0.5
+    },
+    "j": {
+      "name": "焦炭",
+      "data_contract": "j_weighted",
+      "trade_contract": "j2405", 
+      "exchange": "DCE",
+      "multiplier": 100,
+      "tick_size": 0.5
+    }
+  },
+  "strategies": {
+    "ma_strategy": {
+      "class": "MAStrategy",
+      "enabled": true,
+      "symbols": ["rb2405", "i2405"],
+      "params": {
+        "fast_ma": 10,
+        "slow_ma": 30,
+        "volume": 1,
+        "risk_pct": 0.02
+      }
+    }
+  },
+  "trading": {
+    "initial_capital": 1000000,
+    "max_position": 5,
+    "commission_rate": 0.0001,
+    "slippage": 1.0
+  }
+}
