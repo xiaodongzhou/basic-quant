@@ -192,6 +192,149 @@ class PricePoint:
     close: float             # 收盘价
     volume: int              # 成交量
 
+# 交易相关枚举
+class OrderType(Enum):
+    """订单类型枚举"""
+    LIMIT = "LIMIT"        # 限价单
+    MARKET = "MARKET"      # 市价单
+    STOP = "STOP"          # 停止单
+    FAK = "FAK"            # Fill and Kill
+    FOK = "FOK"            # Fill or Kill
+
+class OrderStatus(Enum):
+    """订单状态枚举"""
+    SUBMITTING = "SUBMITTING"  # 提交中
+    NOTTRADED = "NOTTRADED"    # 未成交
+    PARTTRADED = "PARTTRADED"  # 部分成交
+    ALLTRADED = "ALLTRADED"    # 全部成交
+    CANCELLED = "CANCELLED"    # 已撤销
+    REJECTED = "REJECTED"      # 拒绝
+
+class Offset(Enum):
+    """开平仓枚举"""
+    NONE = "NONE"          # 不分开平仓
+    OPEN = "OPEN"          # 开仓
+    CLOSE = "CLOSE"        # 平仓
+    CLOSETODAY = "CLOSETODAY"      # 平今
+    CLOSEYESTERDAY = "CLOSEYESTERDAY"  # 平昨
+
+class TradingSignalAction(Enum):
+    """交易信号动作枚举"""
+    OPEN_LONG = "OPEN_LONG"      # 开多
+    OPEN_SHORT = "OPEN_SHORT"    # 开空
+    CLOSE_LONG = "CLOSE_LONG"    # 平多
+    CLOSE_SHORT = "CLOSE_SHORT"  # 平空
+
+# 交易数据结构
+@dataclass
+class OrderRequest:
+    """
+    订单请求数据结构
+    """
+    symbol: str                   # 合约代码
+    exchange: Exchange            # 交易所
+    direction: Direction          # 交易方向
+    type: OrderType              # 订单类型
+    volume: int                  # 数量
+    price: float = 0.0           # 价格
+    offset: Offset = Offset.NONE # 开平仓
+    reference: str = ""          # 订单备注
+    gateway_name: str = ""       # 网关名称
+
+@dataclass
+class OrderData:
+    """
+    订单数据结构
+    """
+    orderid: str                 # 订单编号
+    symbol: str                  # 合约代码
+    exchange: Exchange           # 交易所
+    direction: Direction         # 交易方向
+    type: OrderType             # 订单类型
+    volume: int                 # 总数量
+    traded: int                 # 已成交数量
+    status: OrderStatus         # 订单状态
+    datetime: datetime          # 订单时间
+    
+    price: float = 0.0          # 委托价格
+    offset: Offset = Offset.NONE # 开平仓
+    reference: str = ""         # 订单备注
+    gateway_name: str = ""      # 网关名称
+
+@dataclass
+class TradeData:
+    """
+    成交数据结构
+    """
+    tradeid: str                # 成交编号
+    orderid: str               # 订单编号
+    symbol: str                # 合约代码
+    exchange: Exchange         # 交易所
+    direction: Direction       # 交易方向
+    volume: int               # 成交数量
+    price: float              # 成交价格
+    datetime: datetime        # 成交时间
+    
+    offset: Offset = Offset.NONE # 开平仓
+    gateway_name: str = ""     # 网关名称
+
+@dataclass
+class PositionData:
+    """
+    持仓数据结构
+    """
+    symbol: str               # 合约代码
+    exchange: Exchange        # 交易所
+    direction: Direction      # 持仓方向
+    volume: int              # 持仓数量
+    frozen: int              # 冻结数量
+    price: float             # 持仓均价
+    pnl: float              # 持仓盈亏
+    yd_volume: int = 0      # 昨仓数量
+    gateway_name: str = ""   # 网关名称
+
+@dataclass
+class AccountData:
+    """
+    账户数据结构
+    """
+    accountid: str           # 账户编号
+    balance: float          # 账户余额
+    frozen: float           # 冻结资金
+    available: float        # 可用资金
+    
+    # 期货相关
+    pre_balance: float = 0.0      # 昨日余额
+    commission: float = 0.0       # 手续费
+    margin: float = 0.0          # 占用保证金
+    close_profit: float = 0.0     # 平仓盈亏
+    holding_profit: float = 0.0   # 持仓盈亏
+    
+    gateway_name: str = ""       # 网关名称
+
+@dataclass
+class TradingSignal:
+    """
+    交易信号数据结构
+    """
+    symbol: str                    # 合约代码
+    action: TradingSignalAction    # 交易动作
+    volume: int                   # 交易数量
+    price: float = 0.0           # 期望价格 (0表示市价)
+    timestamp: datetime = None    # 信号时间
+    strategy: str = ""           # 策略名称
+    reason: str = ""             # 信号原因
+
+@dataclass
+class TradingResult:
+    """
+    交易结果数据结构
+    """
+    success: bool               # 是否成功
+    orderid: str = ""          # 订单编号
+    message: str = ""          # 结果消息
+    timestamp: datetime = None  # 处理时间
+
 # 数据统计结构
 @dataclass
 class DataStatistics:
