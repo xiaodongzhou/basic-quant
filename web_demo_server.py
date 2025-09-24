@@ -829,21 +829,21 @@ def start_real_time_data():
             # 发送市场数据
             market_ticks = data_generator.generate_market_tick()
             socketio.emit('market_data', {
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': beijing_now().isoformat(),
                 'data': market_ticks
             })
             
             # 发送策略状态
             strategy_status = data_generator.generate_strategy_status()
             socketio.emit('strategy_status', {
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': beijing_now().isoformat(),
                 'strategies': strategy_status
             })
             
             # 发送持仓数据
             positions = data_generator.update_positions()
             socketio.emit('positions_update', {
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': beijing_now().isoformat(),
                 'positions': positions
             })
             
@@ -851,7 +851,7 @@ def start_real_time_data():
             new_trade = data_generator.generate_new_trade()
             if new_trade:
                 socketio.emit('new_trade', {
-                    'timestamp': datetime.now().isoformat(),
+                    'timestamp': beijing_now().isoformat(),
                     'trade': new_trade
                 })
             
