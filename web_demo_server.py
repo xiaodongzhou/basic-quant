@@ -207,6 +207,20 @@ class DemoDataGenerator:
             ('hc2405', 'short', 8, 3215.8, 3208.4, 'close', 'MA策略-热卷'),
             ('j2405', 'short', 6, 2018.9, 2015.8, 'open', 'MA策略-焦炭'),
             ('rb2405', 'long', 3, 3445.2, 3456.7, 'close', 'MA快速-螺纹钢'),
+            ('i2405', 'short', 15, 798.1, 795.8, 'close', 'MA策略-铁矿石'),
+            ('rb2405', 'short', 8, 3492.3, 3487.9, 'open', 'MA快速-螺纹钢'),
+            ('j2405', 'long', 12, 2005.6, 2012.4, 'close', 'MA策略-焦炭'),
+            ('hc2405', 'long', 6, 3198.7, 3205.2, 'open', 'MA策略-热卷'),
+            ('rb2405', 'long', 9, 3455.8, 3461.3, 'close', 'MA慢速-螺纹钢'),
+            ('i2405', 'long', 18, 789.4, 793.7, 'open', 'MA策略-铁矿石'),
+            ('j2405', 'short', 7, 2021.5, 2018.2, 'close', 'MA策略-焦炭'),
+            ('rb2405', 'short', 4, 3498.6, 3495.1, 'close', 'MA快速-螺纹钢'),
+            ('hc2405', 'short', 11, 3212.9, 3209.5, 'close', 'MA策略-热卷'),
+            ('i2405', 'short', 13, 801.3, 798.9, 'open', 'MA策略-铁矿石'),
+            ('rb2405', 'long', 7, 3467.2, 3472.8, 'open', 'MA慢速-螺纹钢'),
+            ('j2405', 'long', 9, 2014.7, 2019.3, 'close', 'MA策略-焦炭'),
+            ('hc2405', 'long', 5, 3201.4, 3206.8, 'close', 'MA策略-热卷'),
+            ('rb2405', 'short', 14, 3489.1, 3484.6, 'open', 'MA快速-螺纹钢'),
         ]
         
         for i, (symbol, direction, qty, open_price, close_price, action, strategy) in enumerate(trade_data):
@@ -486,14 +500,28 @@ def get_positions():
 def get_trades():
     """获取成交记录"""
     
+    # 获取分页参数
+    page = int(request.args.get('page', 1))  # 页码，从1开始
+    per_page = int(request.args.get('per_page', 10))  # 每页条数，默认10条
+    
     # 可能生成新交易
     new_trade = data_generator.generate_new_trade()
     
     trades = demo_data.get('trades', [])
+    total_trades = len(trades)
+    
+    # 计算分页
+    total_pages = (total_trades + per_page - 1) // per_page  # 向上取整
+    start_idx = (page - 1) * per_page
+    end_idx = min(start_idx + per_page, total_trades)
+    
+    # 获取当前页的交易（倒序显示，最新的在前面）
+    reversed_trades = list(reversed(trades))
+    page_trades = reversed_trades[start_idx:end_idx]
     
     # 格式化交易数据
     formatted_trades = []
-    for trade in reversed(trades[-20:]):  # 最近20笔交易，倒序显示
+    for trade in page_trades:
         formatted_trade = {
             'id': trade['id'],
             'timestamp': trade['timestamp'].isoformat(),
@@ -521,6 +549,16 @@ def get_trades():
     return jsonify({
         'timestamp': datetime.now().isoformat(),
         'trades': formatted_trades,
+        'pagination': {
+            'current_page': page,
+            'per_page': per_page,
+            'total_trades': total_trades,
+            'total_pages': total_pages,
+            'has_prev': page > 1,
+            'has_next': page < total_pages,
+            'prev_page': page - 1 if page > 1 else None,
+            'next_page': page + 1 if page < total_pages else None
+        },
         'summary': {
             'today_trades': len(today_trades),
             'today_pnl': today_pnl,
@@ -827,6 +865,16 @@ def create_demo_templates():
         .summary-value {
             font-weight: 600;
             color: #2d3748;
+        }
+        .pagination-controls button {
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .pagination-controls button:not(:disabled):hover {
+            background: #e2e8f0 !important;
+        }
+        .pagination-controls button:disabled {
+            opacity: 0.6;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
@@ -1227,10 +1275,36 @@ def create_demo_templates():
             container.innerHTML = summaryHtml + html;
         }
         
+        // 全局分页状态
+        let currentTradesPage = 1;
+        const tradesPerPage = 10;
+        
         // 更新交易记录
-        function updateTrades(trades) {
+        function updateTrades(trades, pagination = null) {
             const container = document.getElementById('trades-data');
             let html = '';
+            
+            // 添加分页信息和控件
+            if (pagination) {
+                html += `
+                    <div style="margin-bottom: 15px; padding: 8px; background: #f7fafc; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                        <div style="color: #4a5568;">
+                            📋 成交记录 (第${pagination.current_page}页/共${pagination.total_pages}页，总计${pagination.total_trades}笔)
+                        </div>
+                        <div class="pagination-controls">
+                            <button onclick="loadTradesPage(${pagination.prev_page})" ${!pagination.has_prev ? 'disabled' : ''} 
+                                    style="margin-right: 5px; padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e0; background: ${!pagination.has_prev ? '#f7fafc' : '#ffffff'}; cursor: ${!pagination.has_prev ? 'not-allowed' : 'pointer'};">
+                                ← 上一页
+                            </button>
+                            <span style="margin: 0 10px; color: #718096;">${pagination.current_page} / ${pagination.total_pages}</span>
+                            <button onclick="loadTradesPage(${pagination.next_page})" ${!pagination.has_next ? 'disabled' : ''} 
+                                    style="margin-left: 5px; padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e0; background: ${!pagination.has_next ? '#f7fafc' : '#ffffff'}; cursor: ${!pagination.has_next ? 'not-allowed' : 'pointer'};">
+                                下一页 →
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
             
             trades.forEach(trade => {
                 const actionClass = trade.action === 'open' ? 'action-open' : 'action-close';
@@ -1298,6 +1372,21 @@ def create_demo_templates():
             }
         }
         
+        // 加载指定页面的交易记录
+        function loadTradesPage(page = 1) {
+            if (!page) return; // 防止无效页码
+            
+            currentTradesPage = page;
+            fetch(`/api/trades?page=${page}&per_page=${tradesPerPage}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateTrades(data.trades, data.pagination);
+                })
+                .catch(error => {
+                    console.error('Error loading trades:', error);
+                });
+        }
+        
         // 加载持仓和交易数据
         function loadPositionsAndTrades() {
             // 加载持仓数据
@@ -1307,12 +1396,8 @@ def create_demo_templates():
                     updatePositions(data);
                 });
             
-            // 加载交易记录
-            fetch('/api/trades')
-                .then(response => response.json())
-                .then(data => {
-                    updateTrades(data.trades);
-                });
+            // 加载交易记录（第一页）
+            loadTradesPage(1);
         }
         
         // 页面加载完成后初始化
@@ -1320,8 +1405,20 @@ def create_demo_templates():
             loadInitialData();
             loadPositionsAndTrades();
             
-            // 定时刷新持仓和交易数据
-            setInterval(loadPositionsAndTrades, 5000);
+            // 定时刷新持仓数据和当前页交易数据
+            setInterval(() => {
+                // 总是刷新持仓数据
+                fetch('/api/positions')
+                    .then(response => response.json())
+                    .then(data => {
+                        updatePositions(data);
+                    });
+                
+                // 如果在第一页，自动刷新最新交易；否则保持用户当前查看的页面
+                if (currentTradesPage === 1) {
+                    loadTradesPage(1);
+                }
+            }, 5000);
         });
     </script>
 </body>
@@ -1344,13 +1441,13 @@ def main():
     
     # 启动服务器
     print("🚀 启动演示服务器...")
-    print("📊 Web界面地址: http://localhost:5003")
+    print("📊 Web界面地址: http://localhost:5004")
     print("🔄 实时数据: WebSocket连接")
     print("💻 支持功能: 市场数据、策略状态、回测系统、配置管理")
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5003, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5004, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:

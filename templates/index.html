@@ -179,6 +179,16 @@
             font-weight: 600;
             color: #2d3748;
         }
+        .pagination-controls button {
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .pagination-controls button:not(:disabled):hover {
+            background: #e2e8f0 !important;
+        }
+        .pagination-controls button:disabled {
+            opacity: 0.6;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -578,10 +588,36 @@
             container.innerHTML = summaryHtml + html;
         }
         
+        // 全局分页状态
+        let currentTradesPage = 1;
+        const tradesPerPage = 10;
+        
         // 更新交易记录
-        function updateTrades(trades) {
+        function updateTrades(trades, pagination = null) {
             const container = document.getElementById('trades-data');
             let html = '';
+            
+            // 添加分页信息和控件
+            if (pagination) {
+                html += `
+                    <div style="margin-bottom: 15px; padding: 8px; background: #f7fafc; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                        <div style="color: #4a5568;">
+                            📋 成交记录 (第${pagination.current_page}页/共${pagination.total_pages}页，总计${pagination.total_trades}笔)
+                        </div>
+                        <div class="pagination-controls">
+                            <button onclick="loadTradesPage(${pagination.prev_page})" ${!pagination.has_prev ? 'disabled' : ''} 
+                                    style="margin-right: 5px; padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e0; background: ${!pagination.has_prev ? '#f7fafc' : '#ffffff'}; cursor: ${!pagination.has_prev ? 'not-allowed' : 'pointer'};">
+                                ← 上一页
+                            </button>
+                            <span style="margin: 0 10px; color: #718096;">${pagination.current_page} / ${pagination.total_pages}</span>
+                            <button onclick="loadTradesPage(${pagination.next_page})" ${!pagination.has_next ? 'disabled' : ''} 
+                                    style="margin-left: 5px; padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e0; background: ${!pagination.has_next ? '#f7fafc' : '#ffffff'}; cursor: ${!pagination.has_next ? 'not-allowed' : 'pointer'};">
+                                下一页 →
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
             
             trades.forEach(trade => {
                 const actionClass = trade.action === 'open' ? 'action-open' : 'action-close';
@@ -649,6 +685,21 @@
             }
         }
         
+        // 加载指定页面的交易记录
+        function loadTradesPage(page = 1) {
+            if (!page) return; // 防止无效页码
+            
+            currentTradesPage = page;
+            fetch(`/api/trades?page=${page}&per_page=${tradesPerPage}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateTrades(data.trades, data.pagination);
+                })
+                .catch(error => {
+                    console.error('Error loading trades:', error);
+                });
+        }
+        
         // 加载持仓和交易数据
         function loadPositionsAndTrades() {
             // 加载持仓数据
@@ -658,12 +709,8 @@
                     updatePositions(data);
                 });
             
-            // 加载交易记录
-            fetch('/api/trades')
-                .then(response => response.json())
-                .then(data => {
-                    updateTrades(data.trades);
-                });
+            // 加载交易记录（第一页）
+            loadTradesPage(1);
         }
         
         // 页面加载完成后初始化
@@ -671,8 +718,20 @@
             loadInitialData();
             loadPositionsAndTrades();
             
-            // 定时刷新持仓和交易数据
-            setInterval(loadPositionsAndTrades, 5000);
+            // 定时刷新持仓数据和当前页交易数据
+            setInterval(() => {
+                // 总是刷新持仓数据
+                fetch('/api/positions')
+                    .then(response => response.json())
+                    .then(data => {
+                        updatePositions(data);
+                    });
+                
+                // 如果在第一页，自动刷新最新交易；否则保持用户当前查看的页面
+                if (currentTradesPage === 1) {
+                    loadTradesPage(1);
+                }
+            }, 5000);
         });
     </script>
 </body>
