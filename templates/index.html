@@ -3,191 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期货量化交易系统 - Phase 2.5 UI/UX优化版</title>
+    <title>期货量化交易系统 - 项目验收演示</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
             color: #333;
-            height: 100vh;
-            overflow: hidden;
         }
-        
-        /* 顶部导航栏 */
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px 0;
+            padding: 20px 0;
             text-align: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: relative;
-            z-index: 10;
         }
-        
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-        
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        /* 主导航Tab */
-        .dashboard-nav {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .nav-tabs {
-            display: flex;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .tab-btn {
-            flex: 1;
-            padding: 15px 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            color: #718096;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        
-        .tab-btn:hover {
-            color: #5a67d8;
-            background: #f7fafc;
-        }
-        
-        .tab-btn.active {
-            color: #5a67d8;
-            border-bottom-color: #5a67d8;
-            background: #f7fafc;
-        }
-        
-        .tab-btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 20px;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            transform: translateY(-50%);
-            transition: background 0.2s ease;
-        }
-        
-        .tab-btn[data-tab="live"]::before { 
-            background: #48bb78; 
-        }
-        .tab-btn[data-tab="backtest"]::before { 
-            background: #ed8936; 
-        }
-        .tab-btn[data-tab="management"]::before { 
-            background: #9f7aea; 
-        }
-        
-        /* 主内容区域 */
-        .dashboard-content {
-            height: calc(100vh - 140px);
-            overflow: hidden;
-        }
-        
-        .tab-content {
-            display: none;
-            height: 100%;
-            overflow-y: auto;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* ========== 实盘运行区域布局 ========== */
-        .live-layout {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 20px;
-            height: 100%;
-        }
-        
-        .strategy-panel {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            height: fit-content;
-        }
-        
-        .main-content {
-            display: grid;
-            grid-template-rows: auto 1fr;
-            gap: 20px;
-            height: 100%;
-        }
-        
-        .running-tasks {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .chart-container {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            height: 100%;
-            min-height: 400px;
-        }
-        
-        /* ========== 回测区域布局 ========== */
-        .backtest-layout {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 20px;
-            height: 100%;
-        }
-        
-        .backtest-config {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            height: fit-content;
-        }
-        
-        .backtest-results {
-            display: grid;
-            grid-template-rows: auto 1fr;
-            gap: 20px;
-            height: 100%;
-        }
-        
-        /* ========== 用户管理区域布局 ========== */
-        .management-layout {
-            display: grid;
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .dashboard { 
+            display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
-            height: fit-content;
+            margin-top: 20px;
         }
-        
-        /* 通用组件样式 */
         .card {
             background: white;
             border-radius: 10px;
@@ -195,168 +32,23 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.2s;
         }
-        
-        .card:hover { 
-            transform: translateY(-2px); 
-        }
-        
+        .card:hover { transform: translateY(-2px); }
         .card h3 {
             color: #5a67d8;
             margin-bottom: 15px;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
-        
-        /* 策略选择组件 */
-        .strategy-selector {
-            margin-bottom: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #4a5568;
-        }
-        
-        .form-group select,
-        .form-group input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-        
-        .form-group select:focus,
-        .form-group input:focus {
-            outline: none;
-            border-color: #5a67d8;
-            box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.1);
-        }
-        
-        .btn {
-            background: #5a67d8;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .btn:hover { 
-            background: #4c51bf; 
-        }
-        
-        .btn-success {
-            background: #48bb78;
-        }
-        
-        .btn-success:hover {
-            background: #38a169;
-        }
-        
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        /* 运行任务列表 */
-        .task-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .task-item:hover {
-            border-color: #5a67d8;
-            background: #f7fafc;
-        }
-        
-        .task-item.selected {
-            border-color: #5a67d8;
-            background: #edf2f7;
-            box-shadow: 0 2px 4px rgba(90, 103, 216, 0.1);
-        }
-        
-        .task-info h4 {
-            margin: 0 0 4px 0;
-            color: #2d3748;
-            font-size: 14px;
-        }
-        
-        .task-info p {
-            margin: 0;
-            font-size: 12px;
-            color: #718096;
-        }
-        
-        .task-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
         .status-indicator {
-            width: 8px;
-            height: 8px;
+            display: inline-block;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
+            margin-right: 8px;
         }
-        
         .status-running { background: #48bb78; }
         .status-paused { background: #ed8936; }
         .status-error { background: #f56565; }
-        
-        /* 连接状态 */
-        #connection-status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 8px 15px;
-            border-radius: 20px;
-            color: white;
-            font-size: 12px;
-            z-index: 1000;
-        }
-        
-        .connected { background: #38a169; }
-        .disconnected { background: #e53e3e; }
-        
-        /* 响应式设计 */
-        @media (max-width: 1024px) {
-            .live-layout,
-            .backtest-layout {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto auto;
-            }
-            
-            .nav-tabs {
-                flex-direction: column;
-            }
-            
-            .tab-btn {
-                text-align: left;
-            }
-        }
-        
-        /* 其他原有样式保持不变 */
         .metric { 
             display: flex; 
             justify-content: space-between; 
@@ -367,9 +59,39 @@
         .metric-value { font-weight: 600; }
         .positive { color: #38a169; }
         .negative { color: #e53e3e; }
+        .btn {
+            background: #5a67d8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #4c51bf; }
+        .backtest-form { margin-top: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+        }
         .loading { text-align: center; color: #718096; }
+        #connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+        }
+        .connected { background: #38a169; }
+        .disconnected { background: #e53e3e; }
         
-        /* 持仓和交易相关样式保持不变 */
+        /* 持仓和交易相关样式 */
         .position-item {
             display: flex;
             justify-content: space-between;
@@ -474,549 +196,131 @@
 <body>
     <div id="connection-status" class="disconnected">未连接</div>
     
-    <!-- 顶部标题栏 -->
     <div class="header">
         <h1>🎯 期货量化交易系统</h1>
-        <p>Phase 2.5 UI/UX优化版 - 三区域布局 | 实盘交易 | 回测分析 | 用户管理</p>
+        <p>项目验收演示 - Milestone 2.1~2.5 核心功能展示</p>
     </div>
     
-    <!-- 主导航Tab -->
-    <nav class="dashboard-nav">
-        <div class="nav-tabs">
-            <button class="tab-btn active" data-tab="live">
-                📊 实盘运行
-            </button>
-            <button class="tab-btn" data-tab="backtest">
-                🔬 回测分析
-            </button>
-            <button class="tab-btn" data-tab="management">
-                ⚙️ 用户管理
-            </button>
-        </div>
-    </nav>
-    
-    <!-- 主内容区域 -->
-    <main class="dashboard-content">
-        <!-- ========== 实盘运行区域 ========== -->
-        <section id="live-trading" class="tab-content active">
-            <div class="live-layout">
-                <!-- 策略配置面板 -->
-                <aside class="strategy-panel">
-                    <h3>🎯 策略配置</h3>
-                    
-                    <div class="strategy-selector">
-                        <div class="form-group">
-                            <label>选择策略:</label>
-                            <select id="strategy-select">
-                                <option value="">请选择策略...</option>
-                                <option value="ma_cross">MA均线策略</option>
-                                <option value="bollinger">布林带策略</option>
-                                <option value="rsi">RSI策略</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>选择品种:</label>
-                            <select id="symbol-select">
-                                <option value="">请选择合约...</option>
-                                <option value="rb2405">螺纹钢 rb2405</option>
-                                <option value="cu2405">沪铜 cu2405</option>
-                                <option value="al2405">沪铝 al2405</option>
-                            </select>
-                        </div>
-                        
-                        <div id="strategy-params">
-                            <!-- 动态参数配置区域 -->
-                        </div>
-                        
-                        <button class="btn btn-success" id="add-task-btn" disabled>
-                            ➕ 添加到实盘
-                        </button>
-                    </div>
-                    
-                    <div class="card" style="margin-top: 20px; padding: 15px;">
-                        <h4 style="color: #718096; margin-bottom: 10px;">📊 系统状态</h4>
-                        <div id="system-status">
-                            <div class="loading">加载中...</div>
-                        </div>
-                    </div>
-                </aside>
-                
-                <!-- 主要内容区 -->
-                <div class="main-content">
-                    <!-- 运行任务列表 -->
-                    <div class="running-tasks">
-                        <h3>🏃 运行中的任务</h3>
-                        <div id="live-tasks-list">
-                            <div class="task-item" data-task-id="demo-1">
-                                <div class="task-info">
-                                    <h4>MA均线策略 - 螺纹钢</h4>
-                                    <p>快线:5 慢线:20 | 运行时间: 2小时36分</p>
-                                </div>
-                                <div class="task-status">
-                                    <span class="status-indicator status-running"></span>
-                                    <span style="font-size: 12px; color: #48bb78;">运行中</span>
-                                </div>
-                            </div>
-                            
-                            <div class="task-item" data-task-id="demo-2">
-                                <div class="task-info">
-                                    <h4>布林带策略 - 沪铜</h4>
-                                    <p>周期:20 标准差:2 | 运行时间: 45分钟</p>
-                                </div>
-                                <div class="task-status">
-                                    <span class="status-indicator status-paused"></span>
-                                    <span style="font-size: 12px; color: #ed8936;">暂停</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- K线图表区域 -->
-                    <div class="chart-container">
-                        <h3>📈 实时K线图表</h3>
-                        <div id="live-chart-placeholder" style="height: 400px; display: flex; align-items: center; justify-content: center; color: #718096;">
-                            请选择左侧运行任务查看对应的K线图表和交易信号
-                        </div>
-                        <canvas id="liveChart" style="display: none; max-height: 400px;"></canvas>
-                    </div>
+    <div class="container">
+        <div class="dashboard">
+            <!-- 系统状态 -->
+            <div class="card">
+                <h3>📊 系统状态</h3>
+                <div id="system-status">
+                    <div class="loading">加载中...</div>
                 </div>
             </div>
-        </section>
-        
-        <!-- ========== 回测分析区域 ========== -->
-        <section id="backtest" class="tab-content">
-            <div class="backtest-layout">
-                <!-- 回测配置面板 -->
-                <aside class="backtest-config">
-                    <h3>🔬 回测配置</h3>
-                    
-                    <div class="form-group">
-                        <label>选择策略:</label>
-                        <select id="backtest-strategy">
-                            <option value="ma_cross">MA均线策略</option>
-                            <option value="bollinger">布林带策略</option>
-                            <option value="rsi">RSI策略</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>选择品种:</label>
-                        <select id="backtest-symbol">
-                            <option value="rb2405">螺纹钢 rb2405</option>
-                            <option value="cu2405">沪铜 cu2405</option>
-                            <option value="al2405">沪铝 al2405</option>
-                        </select>
-                    </div>
-                    
+            
+            <!-- 市场数据 -->
+            <div class="card">
+                <h3>📈 实时行情</h3>
+                <div id="market-data">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+            
+            <!-- 策略状态 -->
+            <div class="card">
+                <h3>🎯 策略状态</h3>
+                <div id="strategy-status">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+            
+            <!-- 回测系统 -->
+            <div class="card">
+                <h3>🔬 回测系统</h3>
+                <div class="backtest-form">
                     <div class="form-group">
                         <label>开始日期:</label>
                         <input type="date" id="start-date" value="2024-01-01">
                     </div>
-                    
                     <div class="form-group">
                         <label>结束日期:</label>
                         <input type="date" id="end-date" value="2024-03-31">
                     </div>
-                    
                     <div class="form-group">
                         <label>初始资金:</label>
                         <input type="number" id="initial-capital" value="1000000">
                     </div>
-                    
                     <div class="form-group">
                         <label>快均线周期:</label>
                         <input type="number" id="fast-period" value="5">
                     </div>
-                    
                     <div class="form-group">
                         <label>慢均线周期:</label>
                         <input type="number" id="slow-period" value="20">
                     </div>
-                    
-                    <button class="btn" onclick="runBacktest()" style="width: 100%; margin-bottom: 20px;">
-                        🚀 运行回测
-                    </button>
-                    
-                    <!-- ML参数优化接口预留 -->
-                    <div style="border-top: 2px solid #e2e8f0; padding-top: 20px;">
-                        <h4 style="color: #9f7aea; margin-bottom: 15px;">🤖 机器学习优化 (预留)</h4>
-                        
-                        <div class="form-group">
-                            <label>优化目标:</label>
-                            <select disabled>
-                                <option>最大夏普比率</option>
-                                <option>最大收益率</option>
-                                <option>最小回撤</option>
-                            </select>
+                    <button class="btn" onclick="runBacktest()">运行回测</button>
+                </div>
+                <div id="backtest-results" style="margin-top: 20px;"></div>
+            </div>
+            
+            <!-- 实时持仓 -->
+            <div class="card">
+                <h3>📊 实时持仓</h3>
+                <div id="positions-data">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+            
+            <!-- 成交记录 -->
+            <div class="card">
+                <h3>📋 成交记录</h3>
+                <div id="trades-data">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+            
+            <!-- 投资组合配置 -->
+            <div class="card">
+                <h3>⚖️ 投资组合配置</h3>
+                <div id="portfolio-config">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+            
+            <!-- 实时图表 -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>📊 实时监控图表</h3>
+                <canvas id="priceChart" width="400" height="200"></canvas>
+            </div>
+            
+            <!-- 回测分析图表 -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>📈 回测分析图表 - K线图与交易信号</h3>
+                <div style="margin-bottom: 15px;">
+                    <button class="btn" onclick="loadBacktestChart()" style="margin-right: 10px;">加载回测数据</button>
+                    <span id="backtest-chart-status" style="color: #718096; font-size: 14px;">点击按钮加载回测分析图表</span>
+                </div>
+                <div style="position: relative; height: 500px; overflow: hidden;">
+                    <canvas id="backtestChart" style="display: block; max-width: 100%; max-height: 100%;"></canvas>
+                </div>
+                <div id="backtest-metrics" style="margin-top: 15px; padding: 10px; background: #f7fafc; border-radius: 6px; display: none;">
+                    <div style="display: flex; justify-content: space-around; text-align: center;">
+                        <div>
+                            <span style="display: block; font-size: 12px; color: #718096;">总收益率</span>
+                            <span id="total-return" style="font-weight: 600; color: #2d3748;">-</span>
                         </div>
-                        
-                        <div class="form-group">
-                            <label>优化算法:</label>
-                            <select disabled>
-                                <option>遗传算法 (GA)</option>
-                                <option>粒子群优化 (PSO)</option>
-                                <option>贝叶斯优化 (BO)</option>
-                            </select>
+                        <div>
+                            <span style="display: block; font-size: 12px; color: #718096;">最大回撤</span>
+                            <span id="max-drawdown" style="font-weight: 600; color: #2d3748;">-</span>
                         </div>
-                        
-                        <button class="btn" disabled style="width: 100%; opacity: 0.5;">
-                            ⚡ AI参数优化 (开发中)
-                        </button>
-                        
-                        <p style="font-size: 12px; color: #718096; margin-top: 10px; text-align: center;">
-                            🚧 机器学习模块正在开发中，敬请期待
-                        </p>
-                    </div>
-                </aside>
-                
-                <!-- 回测结果区域 -->
-                <div class="backtest-results">
-                    <!-- 回测结果摘要 -->
-                    <div class="card">
-                        <h3>📊 回测结果</h3>
-                        <div id="backtest-results">
-                            <div class="loading">请配置参数并运行回测...</div>
+                        <div>
+                            <span style="display: block; font-size: 12px; color: #718096;">交易次数</span>
+                            <span id="total-trades" style="font-weight: 600; color: #2d3748;">-</span>
                         </div>
-                    </div>
-                    
-                    <!-- 回测分析图表 -->
-                    <div class="card" style="flex: 1;">
-                        <h3>📈 回测分析图表</h3>
-                        <div style="margin-bottom: 15px;">
-                            <button class="btn" onclick="loadBacktestChart()" style="margin-right: 10px;">📊 加载回测图表</button>
-                            <span id="backtest-chart-status" style="color: #718096; font-size: 14px;">点击按钮加载回测分析图表</span>
-                        </div>
-                        <div style="position: relative; height: 500px; overflow: hidden;">
-                            <canvas id="backtestChart" style="display: block; max-width: 100%; max-height: 100%;"></canvas>
-                        </div>
-                        <div id="backtest-metrics" style="margin-top: 15px; padding: 10px; background: #f7fafc; border-radius: 6px; display: none;">
-                            <div style="display: flex; justify-content: space-around; text-align: center;">
-                                <div>
-                                    <span style="display: block; font-size: 12px; color: #718096;">总收益率</span>
-                                    <span id="total-return" style="font-weight: 600; color: #2d3748;">-</span>
-                                </div>
-                                <div>
-                                    <span style="display: block; font-size: 12px; color: #718096;">最大回撤</span>
-                                    <span id="max-drawdown" style="font-weight: 600; color: #2d3748;">-</span>
-                                </div>
-                                <div>
-                                    <span style="display: block; font-size: 12px; color: #718096;">交易次数</span>
-                                    <span id="total-trades" style="font-weight: 600; color: #2d3748;">-</span>
-                                </div>
-                                <div>
-                                    <span style="display: block; font-size: 12px; color: #718096;">胜率</span>
-                                    <span id="win-rate" style="font-weight: 600; color: #2d3748;">-</span>
-                                </div>
-                            </div>
+                        <div>
+                            <span style="display: block; font-size: 12px; color: #718096;">胜率</span>
+                            <span id="win-rate" style="font-weight: 600; color: #2d3748;">-</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
-        
-        <!-- ========== 用户管理区域 ========== -->
-        <section id="management" class="tab-content">
-            <div class="management-layout">
-                <!-- 投资组合配置 -->
-                <div class="card">
-                    <h3>⚖️ 投资组合配置</h3>
-                    <div id="portfolio-config">
-                        <div class="loading">加载中...</div>
-                    </div>
-                </div>
-                
-                <!-- 实时持仓 -->
-                <div class="card">
-                    <h3>📊 实时持仓</h3>
-                    <div id="positions-data">
-                        <div class="loading">加载中...</div>
-                    </div>
-                </div>
-                
-                <!-- 成交记录 -->
-                <div class="card">
-                    <h3>📋 成交记录</h3>
-                    <div id="trades-data">
-                        <div class="loading">加载中...</div>
-                    </div>
-                </div>
-                
-                <!-- 市场数据 -->
-                <div class="card">
-                    <h3>📈 实时行情</h3>
-                    <div id="market-data">
-                        <div class="loading">加载中...</div>
-                    </div>
-                </div>
-                
-                <!-- 策略状态 -->
-                <div class="card">
-                    <h3>🎯 策略状态</h3>
-                    <div id="strategy-status">
-                        <div class="loading">加载中...</div>
-                    </div>
-                </div>
-                
-                <!-- 实时监控图表 -->
-                <div class="card" style="grid-column: 1 / -1;">
-                    <h3>📊 实时监控图表</h3>
-                    <canvas id="priceChart" width="400" height="200"></canvas>
-                </div>
-            </div>
-        </section>
-    </main>
+        </div>
+    </div>
 
     <script>
-        // ========== Tab 切换功能 ==========
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tabId = btn.dataset.tab;
-                
-                // 更新按钮状态
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                // 更新内容区域
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                document.getElementById(tabId === 'live' ? 'live-trading' : 
-                                      tabId === 'backtest' ? 'backtest' : 'management').classList.add('active');
-            });
-        });
-        
-        // ========== 策略配置功能 ==========
-        const strategySelect = document.getElementById('strategy-select');
-        const symbolSelect = document.getElementById('symbol-select');
-        const addTaskBtn = document.getElementById('add-task-btn');
-        
-        // 策略参数配置模板
-        const strategyParams = {
-            'ma_cross': [
-                { name: 'fast_period', label: '快均线周期', type: 'number', default: 5, min: 1, max: 50 },
-                { name: 'slow_period', label: '慢均线周期', type: 'number', default: 20, min: 5, max: 200 }
-            ],
-            'bollinger': [
-                { name: 'period', label: '周期', type: 'number', default: 20, min: 5, max: 100 },
-                { name: 'std_dev', label: '标准差倍数', type: 'number', default: 2, min: 1, max: 5, step: 0.1 }
-            ],
-            'rsi': [
-                { name: 'period', label: 'RSI周期', type: 'number', default: 14, min: 5, max: 50 },
-                { name: 'upper_threshold', label: '超买阈值', type: 'number', default: 70, min: 50, max: 90 },
-                { name: 'lower_threshold', label: '超卖阈值', type: 'number', default: 30, min: 10, max: 50 }
-            ]
-        };
-        
-        // 策略选择事件
-        strategySelect.addEventListener('change', function() {
-            updateStrategyParams();
-            checkFormComplete();
-        });
-        
-        symbolSelect.addEventListener('change', function() {
-            checkFormComplete();
-        });
-        
-        // 更新策略参数配置
-        function updateStrategyParams() {
-            const strategy = strategySelect.value;
-            const paramsContainer = document.getElementById('strategy-params');
-            
-            if (!strategy) {
-                paramsContainer.innerHTML = '';
-                return;
-            }
-            
-            const params = strategyParams[strategy];
-            let html = '<h4 style="color: #5a67d8; margin: 15px 0 10px 0;">参数配置:</h4>';
-            
-            params.forEach(param => {
-                html += `
-                    <div class="form-group">
-                        <label>${param.label}:</label>
-                        <input type="${param.type}" 
-                               id="param-${param.name}" 
-                               value="${param.default}"
-                               min="${param.min || ''}"
-                               max="${param.max || ''}"
-                               step="${param.step || ''}"
-                               onchange="checkFormComplete()">
-                    </div>
-                `;
-            });
-            
-            paramsContainer.innerHTML = html;
-        }
-        
-        // 检查表单完整性
-        function checkFormComplete() {
-            const strategy = strategySelect.value;
-            const symbol = symbolSelect.value;
-            addTaskBtn.disabled = !strategy || !symbol;
-        }
-        
-        // 添加到实盘
-        addTaskBtn.addEventListener('click', function() {
-            const strategy = strategySelect.value;
-            const symbol = symbolSelect.value;
-            
-            if (!strategy || !symbol) return;
-            
-            // 收集参数
-            const params = {};
-            if (strategyParams[strategy]) {
-                strategyParams[strategy].forEach(param => {
-                    const input = document.getElementById(`param-${param.name}`);
-                    if (input) {
-                        params[param.name] = input.type === 'number' ? parseFloat(input.value) : input.value;
-                    }
-                });
-            }
-            
-            // 创建新任务
-            addLiveTask(strategy, symbol, params);
-        });
-        
-        // 添加实盘任务
-        function addLiveTask(strategy, symbol, params) {
-            const tasksList = document.getElementById('live-tasks-list');
-            const taskId = `task-${Date.now()}`;
-            
-            const strategyNames = {
-                'ma_cross': 'MA均线策略',
-                'bollinger': '布林带策略',
-                'rsi': 'RSI策略'
-            };
-            
-            const symbolNames = {
-                'rb2405': '螺纹钢',
-                'cu2405': '沪铜',
-                'al2405': '沪铝'
-            };
-            
-            const paramsText = Object.entries(params).map(([key, value]) => `${key}:${value}`).join(' ');
-            
-            const taskHtml = `
-                <div class="task-item" data-task-id="${taskId}">
-                    <div class="task-info">
-                        <h4>${strategyNames[strategy]} - ${symbolNames[symbol]}</h4>
-                        <p>${paramsText} | 运行时间: 刚刚启动</p>
-                    </div>
-                    <div class="task-status">
-                        <span class="status-indicator status-running"></span>
-                        <span style="font-size: 12px; color: #48bb78;">运行中</span>
-                    </div>
-                </div>
-            `;
-            
-            tasksList.insertAdjacentHTML('afterbegin', taskHtml);
-            
-            // 绑定点击事件
-            const newTask = tasksList.querySelector(`[data-task-id="${taskId}"]`);
-            newTask.addEventListener('click', () => selectTask(taskId));
-            
-            // 重置表单
-            strategySelect.value = '';
-            symbolSelect.value = '';
-            document.getElementById('strategy-params').innerHTML = '';
-            checkFormComplete();
-            
-            alert(`✅ 成功添加 ${strategyNames[strategy]} 到实盘运行！`);
-        }
-        
-        // ========== 任务选择和图表显示 ==========
-        let selectedTaskId = null;
-        
-        // 绑定现有任务的点击事件
-        document.querySelectorAll('.task-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const taskId = item.dataset.taskId;
-                selectTask(taskId);
-            });
-        });
-        
-        function selectTask(taskId) {
-            selectedTaskId = taskId;
-            
-            // 更新任务选择状态
-            document.querySelectorAll('.task-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            document.querySelector(`[data-task-id="${taskId}"]`).classList.add('selected');
-            
-            // 显示对应的图表
-            loadLiveChart(taskId);
-        }
-        
-        function loadLiveChart(taskId) {
-            const placeholder = document.getElementById('live-chart-placeholder');
-            const canvas = document.getElementById('liveChart');
-            
-            placeholder.style.display = 'none';
-            canvas.style.display = 'block';
-            
-            // 这里可以加载对应任务的实际图表数据
-            // 目前显示演示图表
-            createDemoLiveChart();
-        }
-        
-        function createDemoLiveChart() {
-            const ctx = document.getElementById('liveChart').getContext('2d');
-            
-            // 生成演示数据
-            const labels = [];
-            const priceData = [];
-            const basePrice = 3500;
-            
-            for (let i = 0; i < 50; i++) {
-                const time = new Date(Date.now() - (50 - i) * 60000);
-                labels.push(time.toLocaleTimeString());
-                priceData.push(basePrice + Math.sin(i / 5) * 50 + Math.random() * 20);
-            }
-            
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '实时价格',
-                        data: priceData,
-                        borderColor: '#5a67d8',
-                        backgroundColor: 'rgba(90, 103, 216, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            title: {
-                                display: true,
-                                text: '价格'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: '时间'
-                            }
-                        }
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `📊 ${selectedTaskId ? selectedTaskId.toUpperCase() : '演示任务'} - 实时K线图表`
-                        }
-                    }
-                }
-            });
-        }
-        
-        // ========== 原有功能保持不变 ==========
         // 初始化Socket.IO连接
         const socket = io();
         const connectionStatus = document.getElementById('connection-status');

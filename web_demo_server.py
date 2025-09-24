@@ -77,7 +77,7 @@ class DemoDataGenerator:
         self.symbols = ['rb2405', 'i2405', 'j2405', 'hc2405']
         self.base_prices = {'rb2405': 3500, 'i2405': 800, 'j2405': 2000, 'hc2405': 3200}
         self.current_prices = self.base_prices.copy()
-        self.last_update = datetime.now()
+        self.last_update = beijing_now()
         self.trade_counter = 0
         self.last_trade_time = datetime.now()
         
@@ -249,7 +249,7 @@ class DemoDataGenerator:
                 
             trade = {
                 'id': f'T{1000 + i}',
-                'timestamp': trade_time,
+                'timestamp': trade_time.isoformat(),
                 'symbol': symbol,
                 'direction': direction,
                 'action': action,
@@ -317,7 +317,7 @@ class DemoDataGenerator:
         
         trade = {
             'id': f'T{1000 + self.trade_counter}',
-            'timestamp': beijing_now(),
+            'timestamp': beijing_now().isoformat(),
             'symbol': symbol,
             'direction': direction,
             'action': action, 
@@ -1909,18 +1909,18 @@ def main():
     print("🎯 期货量化交易系统 - 项目验收演示服务器")
     print("=" * 60)
     
-    # 创建模板文件
-    create_demo_templates()
+    # 创建模板文件 (已有自定义模板，跳过)
+    # create_demo_templates()
     
     # 启动服务器
     print("🚀 启动演示服务器...")
-    print("📊 Web界面地址: http://localhost:5008")
+    print("📊 Web界面地址: http://localhost:5009")
     print("🔄 实时数据: WebSocket连接")
     print("💻 支持功能: 市场数据、策略状态、回测系统、配置管理")
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5008, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5009, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:
