@@ -575,7 +575,6 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
 </head>
 <body>
     <div id="connection-status" class="disconnected">未连接</div>
@@ -1215,7 +1214,12 @@
         }
         
         function createDemoLiveChart() {
-            const ctx = document.getElementById('liveChart').getContext('2d');
+            const canvas = document.getElementById('liveChart');
+            if (!canvas) {
+                console.error('实时图表canvas元素未找到');
+                return;
+            }
+            const ctx = canvas.getContext('2d');
             
             // 生成演示蜡烛图数据
             const candlestickData = [];
@@ -1242,23 +1246,56 @@
                 basePrice = close + (Math.random() * 10 - 5); // 下一个开盘价略有变化
             }
             
+            // 创建兼容的蜡烛图数据（使用柱状图模拟）
+            const riseData = [];
+            const fallData = [];
+            const labels = [];
+            
+            candlestickData.forEach((candle, index) => {
+                const time = new Date(candle.x);
+                labels.push(time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }));
+                
+                if (candle.c >= candle.o) {
+                    // 上涨：红色
+                    riseData.push({
+                        x: index,
+                        y: [candle.l, candle.o, candle.c, candle.h]
+                    });
+                    fallData.push(null);
+                } else {
+                    // 下跌：绿色
+                    fallData.push({
+                        x: index,
+                        y: [candle.l, candle.c, candle.o, candle.h]
+                    });
+                    riseData.push(null);
+                }
+            });
+
             new Chart(ctx, {
-                type: 'candlestick',
+                type: 'bar',
                 data: {
-                    datasets: [{
-                        label: '价格',
-                        data: candlestickData,
-                        color: {
-                            up: '#ff4757',     // 红色表示上涨（中国习惯）
-                            down: '#2ed573',   // 绿色表示下跌（中国习惯）
-                            unchanged: '#757575'
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '上涨',
+                            data: riseData,
+                            backgroundColor: '#ff4757', // 红色表示上涨
+                            borderColor: '#ff4757',
+                            borderWidth: 1,
+                            barPercentage: 0.8,
+                            categoryPercentage: 0.9
                         },
-                        borderColor: {
-                            up: '#ff3838',
-                            down: '#26d65c',
-                            unchanged: '#757575'
+                        {
+                            label: '下跌', 
+                            data: fallData,
+                            backgroundColor: '#2ed573', // 绿色表示下跌
+                            borderColor: '#2ed573',
+                            borderWidth: 1,
+                            barPercentage: 0.8,
+                            categoryPercentage: 0.9
                         }
-                    }]
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -1282,7 +1319,10 @@
                             title: {
                                 display: true,
                                 text: '价格 (元)'
-                            }
+                            },
+                            // 自定义Y轴显示范围
+                            min: Math.min(...candlestickData.map(d => d.l)) - 10,
+                            max: Math.max(...candlestickData.map(d => d.h)) + 10
                         }
                     },
                     plugins: {
@@ -1296,22 +1336,27 @@
                         tooltip: {
                             callbacks: {
                                 title: function(context) {
-                                    const date = new Date(context[0].parsed.x);
-                                    return date.toLocaleString('zh-CN');
+                                    return labels[context[0].dataIndex];
                                 },
                                 label: function(context) {
-                                    const data = context.raw;
-                                    const trend = data.c >= data.o ? '上涨 📈' : '下跌 📉';
-                                    const change = ((data.c - data.o) / data.o * 100);
-                                    const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
+                                    const dataIndex = context.dataIndex;
+                                    const candle = candlestickData[dataIndex];
                                     
-                                    return [
-                                        `${trend} ${changeText}`,
-                                        `开盘: ${data.o.toFixed(2)}`,
-                                        `最高: ${data.h.toFixed(2)}`,
-                                        `最低: ${data.l.toFixed(2)}`,
-                                        `收盘: ${data.c.toFixed(2)}`
-                                    ];
+                                    if (candle) {
+                                        const trend = candle.c >= candle.o ? '上涨 📈' : '下跌 📉';
+                                        const change = ((candle.c - candle.o) / candle.o * 100);
+                                        const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
+                                        
+                                        return [
+                                            `${trend} ${changeText}`,
+                                            `开盘: ${candle.o.toFixed(2)}`,
+                                            `最高: ${candle.h.toFixed(2)}`,
+                                            `最低: ${candle.l.toFixed(2)}`,
+                                            `收盘: ${candle.c.toFixed(2)}`
+                                        ];
+                                    }
+                                    
+                                    return context.dataset.label + ': ' + context.formattedValue;
                                 }
                             }
                         }
@@ -1769,7 +1814,12 @@
         }
         
         function createBacktestChart(data) {
-            const ctx = document.getElementById('backtestChart').getContext('2d');
+            const canvas = document.getElementById('backtestChart');
+            if (!canvas) {
+                console.error('回测图表canvas元素未找到');
+                return;
+            }
+            const ctx = canvas.getContext('2d');
             
             // 销毁现有图表
             if (backtestChart) {
@@ -1834,26 +1884,25 @@
             // 准备收益曲线数据
             const returnData = data.portfolio_values.map(item => item.return);
             
+            // 使用收盘价线图替代蜡烛图以确保兼容性
+            const priceData = candlestickData.map(item => item.c);
+            
             backtestChart = new Chart(ctx, {
-                type: 'candlestick',
+                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
-                        // K线蜡烛图
+                        // K线收盘价线图
                         {
-                            label: 'K线蜡烛图',
-                            data: candlestickData,
-                            color: {
-                                up: '#ff4757',     // 红色表示上涨（中国习惯）
-                                down: '#2ed573',   // 绿色表示下跌（中国习惯）
-                                unchanged: '#757575'
-                            },
-                            borderColor: {
-                                up: '#ff3838',
-                                down: '#26d65c',
-                                unchanged: '#757575'
-                            },
-                            yAxisID: 'price'
+                            label: 'K线收盘价',
+                            data: priceData,
+                            borderColor: '#4299e1',
+                            backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                            fill: false,
+                            tension: 0.1,
+                            yAxisID: 'price',
+                            pointRadius: 0,
+                            borderWidth: 1.5
                         },
                         // 多头开仓
                         {
@@ -1990,20 +2039,26 @@
                                     return data.kline_data[index] ? data.kline_data[index].time : '';
                                 },
                                 label: function(context) {
-                                    // 处理蜡烛图数据
-                                    if (context.dataset.label === 'K线蜡烛图') {
-                                        const candle = context.raw;
-                                        const trend = candle.c >= candle.o ? '上涨 📈' : '下跌 📉';
-                                        const change = ((candle.c - candle.o) / candle.o * 100);
-                                        const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
+                                    // 处理K线价格数据
+                                    if (context.dataset.label === 'K线收盘价') {
+                                        const dataIndex = context.dataIndex;
+                                        const candle = candlestickData[dataIndex];
                                         
-                                        return [
-                                            `${trend} ${changeText}`,
-                                            `开盘: ${candle.o.toFixed(2)}`,
-                                            `最高: ${candle.h.toFixed(2)}`,
-                                            `最低: ${candle.l.toFixed(2)}`,
-                                            `收盘: ${candle.c.toFixed(2)}`
-                                        ];
+                                        if (candle) {
+                                            const trend = candle.c >= candle.o ? '上涨 📈' : '下跌 📉';
+                                            const change = ((candle.c - candle.o) / candle.o * 100);
+                                            const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
+                                            
+                                            return [
+                                                `${trend} ${changeText}`,
+                                                `开盘: ${candle.o.toFixed(2)}`,
+                                                `最高: ${candle.h.toFixed(2)}`,
+                                                `最低: ${candle.l.toFixed(2)}`,
+                                                `收盘: ${candle.c.toFixed(2)}`
+                                            ];
+                                        }
+                                        
+                                        return `收盘价: ${context.formattedValue}`;
                                     }
                                     
                                     // 处理其他数据集
@@ -2113,6 +2168,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadInitialData();
             loadPositionsAndTrades();
+            
+            // 默认选择第一个任务显示图表
+            setTimeout(() => {
+                const firstTask = document.querySelector('.task-item[data-task-id]');
+                if (firstTask && !selectedTaskId) {
+                    const taskId = firstTask.dataset.taskId;
+                    selectTask(taskId);
+                }
+            }, 500);
             
             // 定时刷新持仓数据和当前页交易数据
             setInterval(() => {
