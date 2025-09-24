@@ -210,6 +210,63 @@
             gap: 8px;
         }
         
+        /* 账户管理样式 */
+        .account-info {
+            margin-bottom: 20px;
+        }
+        
+        .account-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .account-item:last-child {
+            border-bottom: none;
+        }
+        
+        .account-item label {
+            font-weight: 600;
+            color: #4a5568;
+            min-width: 100px;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-badge.active {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .account-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-small {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 6px;
+            background: #e2e8f0;
+            color: #4a5568;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-small:hover {
+            background: #cbd5e0;
+            transform: translateY(-1px);
+        }
+        
         /* 策略选择组件 */
         .strategy-selector {
             margin-bottom: 20px;
@@ -312,6 +369,54 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+        
+        /* 任务控制按钮 */
+        .task-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+        }
+        
+        .task-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .task-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .pause-btn {
+            background: #ed8936;
+            color: white;
+        }
+        
+        .pause-btn:hover {
+            background: #dd7324;
+        }
+        
+        .resume-btn {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .resume-btn:hover {
+            background: #38a169;
+        }
+        
+        .delete-btn {
+            background: #f56565;
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background: #e53e3e;
         }
         
         .status-indicator {
@@ -470,6 +575,7 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
 </head>
 <body>
     <div id="connection-status" class="disconnected">未连接</div>
@@ -548,25 +654,33 @@
                     <div class="running-tasks">
                         <h3>🏃 运行中的任务</h3>
                         <div id="live-tasks-list">
-                            <div class="task-item" data-task-id="demo-1">
+                            <div class="task-item" data-task-id="demo-1" data-status="running">
                                 <div class="task-info">
                                     <h4>MA均线策略 - 螺纹钢</h4>
                                     <p>快线:5 慢线:20 | 运行时间: 2小时36分</p>
                                 </div>
                                 <div class="task-status">
                                     <span class="status-indicator status-running"></span>
-                                    <span style="font-size: 12px; color: #48bb78;">运行中</span>
+                                    <span class="status-text" style="font-size: 12px; color: #48bb78;">运行中</span>
+                                    <div class="task-controls">
+                                        <button class="task-btn pause-btn" onclick="pauseTask('demo-1')">⏸ 暂停</button>
+                                        <button class="task-btn delete-btn" onclick="deleteTask('demo-1')">🗑 删除</button>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="task-item" data-task-id="demo-2">
+                            <div class="task-item" data-task-id="demo-2" data-status="paused">
                                 <div class="task-info">
                                     <h4>布林带策略 - 沪铜</h4>
                                     <p>周期:20 标准差:2 | 运行时间: 45分钟</p>
                                 </div>
                                 <div class="task-status">
                                     <span class="status-indicator status-paused"></span>
-                                    <span style="font-size: 12px; color: #ed8936;">暂停</span>
+                                    <span class="status-text" style="font-size: 12px; color: #ed8936;">暂停</span>
+                                    <div class="task-controls">
+                                        <button class="task-btn resume-btn" onclick="resumeTask('demo-2')">▶️ 恢复</button>
+                                        <button class="task-btn delete-btn" onclick="deleteTask('demo-2')">🗑 删除</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -718,6 +832,40 @@
         <!-- ========== 用户管理区域 ========== -->
         <section id="management" class="tab-content">
             <div class="management-layout">
+                <!-- 账户管理 -->
+                <div class="card">
+                    <h3>👤 账户管理</h3>
+                    <div id="account-management">
+                        <div class="account-info">
+                            <div class="account-item">
+                                <label>账户名称:</label>
+                                <span id="account-name">Demo交易账户</span>
+                                <button class="btn-small" onclick="editAccountName()">✏️ 编辑</button>
+                            </div>
+                            <div class="account-item">
+                                <label>账户余额:</label>
+                                <span id="account-balance" style="color: #48bb78; font-weight: 600;">¥1,000,000.00</span>
+                            </div>
+                            <div class="account-item">
+                                <label>可用资金:</label>
+                                <span id="available-balance" style="color: #4299e1; font-weight: 600;">¥850,000.00</span>
+                            </div>
+                            <div class="account-item">
+                                <label>冻结资金:</label>
+                                <span id="frozen-balance" style="color: #ed8936; font-weight: 600;">¥150,000.00</span>
+                            </div>
+                            <div class="account-item">
+                                <label>账户状态:</label>
+                                <span class="status-badge active">🟢 正常</span>
+                            </div>
+                        </div>
+                        <div class="account-actions">
+                            <button class="btn" onclick="refreshAccountInfo()">🔄 刷新账户信息</button>
+                            <button class="btn" onclick="exportAccountData()">📊 导出账户数据</button>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- 投资组合配置 -->
                 <div class="card">
                     <h3>⚖️ 投资组合配置</h3>
@@ -756,12 +904,6 @@
                     <div id="strategy-status">
                         <div class="loading">加载中...</div>
                     </div>
-                </div>
-                
-                <!-- 实时监控图表 -->
-                <div class="card" style="grid-column: 1 / -1;">
-                    <h3>📊 实时监控图表</h3>
-                    <canvas id="priceChart" width="400" height="200"></canvas>
                 </div>
             </div>
         </section>
@@ -898,14 +1040,18 @@
             const paramsText = Object.entries(params).map(([key, value]) => `${key}:${value}`).join(' ');
             
             const taskHtml = `
-                <div class="task-item" data-task-id="${taskId}">
+                <div class="task-item" data-task-id="${taskId}" data-status="running">
                     <div class="task-info">
                         <h4>${strategyNames[strategy]} - ${symbolNames[symbol]}</h4>
                         <p>${paramsText} | 运行时间: 刚刚启动</p>
                     </div>
                     <div class="task-status">
                         <span class="status-indicator status-running"></span>
-                        <span style="font-size: 12px; color: #48bb78;">运行中</span>
+                        <span class="status-text" style="font-size: 12px; color: #48bb78;">运行中</span>
+                        <div class="task-controls">
+                            <button class="task-btn pause-btn" onclick="pauseTask('${taskId}')">⏸ 暂停</button>
+                            <button class="task-btn delete-btn" onclick="deleteTask('${taskId}')">🗑 删除</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -961,55 +1107,213 @@
             createDemoLiveChart();
         }
         
+        // ========== 任务控制功能 ==========
+        function pauseTask(taskId) {
+            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (!taskElement) {
+                alert('❌ 任务不存在');
+                return;
+            }
+            
+            const currentStatus = taskElement.dataset.status;
+            if (currentStatus === 'paused') {
+                alert('⚠️ 任务已经处于暂停状态');
+                return;
+            }
+            
+            // 更新任务状态为暂停
+            taskElement.dataset.status = 'paused';
+            
+            // 更新状态显示
+            const statusIndicator = taskElement.querySelector('.status-indicator');
+            const statusText = taskElement.querySelector('.status-text');
+            const taskControls = taskElement.querySelector('.task-controls');
+            
+            statusIndicator.className = 'status-indicator status-paused';
+            statusText.textContent = '暂停';
+            statusText.style.color = '#ed8936';
+            
+            // 更新控制按钮
+            taskControls.innerHTML = `
+                <button class="task-btn resume-btn" onclick="resumeTask('${taskId}')">▶️ 恢复</button>
+                <button class="task-btn delete-btn" onclick="deleteTask('${taskId}')">🗑 删除</button>
+            `;
+            
+            // TODO: 发送暂停请求到后端
+            console.log(`暂停任务: ${taskId}`);
+            
+            alert('⏸️ 任务已暂停');
+        }
+        
+        function resumeTask(taskId) {
+            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (!taskElement) {
+                alert('❌ 任务不存在');
+                return;
+            }
+            
+            const currentStatus = taskElement.dataset.status;
+            if (currentStatus === 'running') {
+                alert('⚠️ 任务已经在运行中');
+                return;
+            }
+            
+            // 更新任务状态为运行
+            taskElement.dataset.status = 'running';
+            
+            // 更新状态显示
+            const statusIndicator = taskElement.querySelector('.status-indicator');
+            const statusText = taskElement.querySelector('.status-text');
+            const taskControls = taskElement.querySelector('.task-controls');
+            
+            statusIndicator.className = 'status-indicator status-running';
+            statusText.textContent = '运行中';
+            statusText.style.color = '#48bb78';
+            
+            // 更新控制按钮
+            taskControls.innerHTML = `
+                <button class="task-btn pause-btn" onclick="pauseTask('${taskId}')">⏸ 暂停</button>
+                <button class="task-btn delete-btn" onclick="deleteTask('${taskId}')">🗑 删除</button>
+            `;
+            
+            // TODO: 发送恢复请求到后端
+            console.log(`恢复任务: ${taskId}`);
+            
+            alert('▶️ 任务已恢复运行');
+        }
+        
+        function deleteTask(taskId) {
+            if (!confirm('🗑️ 确定要删除此任务吗？删除后无法恢复。')) {
+                return;
+            }
+            
+            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (!taskElement) {
+                alert('❌ 任务不存在');
+                return;
+            }
+            
+            // 如果是当前选中的任务，清除选择状态
+            if (selectedTaskId === taskId) {
+                selectedTaskId = null;
+                
+                // 隐藏图表，显示占位符
+                const placeholder = document.getElementById('live-chart-placeholder');
+                const canvas = document.getElementById('liveChart');
+                
+                placeholder.style.display = 'flex';
+                canvas.style.display = 'none';
+            }
+            
+            // 删除任务元素
+            taskElement.remove();
+            
+            // TODO: 发送删除请求到后端
+            console.log(`删除任务: ${taskId}`);
+            
+            alert('🗑️ 任务已删除');
+        }
+        
         function createDemoLiveChart() {
             const ctx = document.getElementById('liveChart').getContext('2d');
             
-            // 生成演示数据
-            const labels = [];
-            const priceData = [];
-            const basePrice = 3500;
+            // 生成演示蜡烛图数据
+            const candlestickData = [];
+            let basePrice = 3500;
             
-            for (let i = 0; i < 50; i++) {
-                const time = new Date(Date.now() - (50 - i) * 60000);
-                labels.push(time.toLocaleTimeString());
-                priceData.push(basePrice + Math.sin(i / 5) * 50 + Math.random() * 20);
+            for (let i = 0; i < 30; i++) {
+                const time = new Date(Date.now() - (30 - i) * 300000); // 5分钟间隔
+                
+                // 生成OHLC数据
+                const open = basePrice + (Math.random() * 20 - 10);
+                const volatility = 15 + Math.random() * 10;
+                const high = open + Math.random() * volatility;
+                const low = open - Math.random() * volatility;
+                const close = low + Math.random() * (high - low);
+                
+                candlestickData.push({
+                    x: time.getTime(),
+                    o: open,
+                    h: high,
+                    l: low,
+                    c: close
+                });
+                
+                basePrice = close + (Math.random() * 10 - 5); // 下一个开盘价略有变化
             }
             
             new Chart(ctx, {
-                type: 'line',
+                type: 'candlestick',
                 data: {
-                    labels: labels,
                     datasets: [{
-                        label: '实时价格',
-                        data: priceData,
-                        borderColor: '#5a67d8',
-                        backgroundColor: 'rgba(90, 103, 216, 0.1)',
-                        fill: true,
-                        tension: 0.4
+                        label: '价格',
+                        data: candlestickData,
+                        color: {
+                            up: '#ff4757',     // 红色表示上涨（中国习惯）
+                            down: '#2ed573',   // 绿色表示下跌（中国习惯）
+                            unchanged: '#757575'
+                        },
+                        borderColor: {
+                            up: '#ff3838',
+                            down: '#26d65c',
+                            unchanged: '#757575'
+                        }
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'minute',
+                                displayFormats: {
+                                    minute: 'HH:mm'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: '时间'
+                            }
+                        },
                         y: {
                             beginAtZero: false,
                             title: {
                                 display: true,
-                                text: '价格'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: '时间'
+                                text: '价格 (元)'
                             }
                         }
                     },
                     plugins: {
                         title: {
                             display: true,
-                            text: `📊 ${selectedTaskId ? selectedTaskId.toUpperCase() : '演示任务'} - 实时K线图表`
+                            text: `📊 ${selectedTaskId ? selectedTaskId.toUpperCase() : '演示任务'} - 实时蜡烛图`
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const date = new Date(context[0].parsed.x);
+                                    return date.toLocaleString('zh-CN');
+                                },
+                                label: function(context) {
+                                    const data = context.raw;
+                                    const trend = data.c >= data.o ? '上涨 📈' : '下跌 📉';
+                                    const change = ((data.c - data.o) / data.o * 100);
+                                    const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
+                                    
+                                    return [
+                                        `${trend} ${changeText}`,
+                                        `开盘: ${data.o.toFixed(2)}`,
+                                        `最高: ${data.h.toFixed(2)}`,
+                                        `最低: ${data.l.toFixed(2)}`,
+                                        `收盘: ${data.c.toFixed(2)}`
+                                    ];
+                                }
+                            }
                         }
                     }
                 }
@@ -1472,14 +1776,21 @@
                 backtestChart.destroy();
             }
             
+            // 准备K线蜡烛图数据
+            const candlestickData = data.kline_data.map((item, index) => ({
+                x: index,
+                o: item.open,
+                h: item.high,
+                l: item.low,
+                c: item.close,
+                time: item.time
+            }));
+            
             // 简化数据处理，使用索引而不是时间
             const labels = data.kline_data.map((item, index) => {
                 // 每50个数据点显示一个标签
                 return index % 50 === 0 ? item.time.substring(5, 16) : '';
             });
-            
-            // 准备K线收盘价数据
-            const priceData = data.kline_data.map(item => item.close);
             
             // 创建价格到索引的映射
             const timeToIndex = {};
@@ -1524,21 +1835,25 @@
             const returnData = data.portfolio_values.map(item => item.return);
             
             backtestChart = new Chart(ctx, {
-                type: 'line',
+                type: 'candlestick',
                 data: {
                     labels: labels,
                     datasets: [
-                        // K线收盘价
+                        // K线蜡烛图
                         {
-                            label: 'K线收盘价',
-                            data: priceData,
-                            borderColor: '#4299e1',
-                            backgroundColor: 'rgba(66, 153, 225, 0.1)',
-                            fill: false,
-                            tension: 0.1,
-                            yAxisID: 'price',
-                            pointRadius: 0,
-                            borderWidth: 1.5
+                            label: 'K线蜡烛图',
+                            data: candlestickData,
+                            color: {
+                                up: '#ff4757',     // 红色表示上涨（中国习惯）
+                                down: '#2ed573',   // 绿色表示下跌（中国习惯）
+                                unchanged: '#757575'
+                            },
+                            borderColor: {
+                                up: '#ff3838',
+                                down: '#26d65c',
+                                unchanged: '#757575'
+                            },
+                            yAxisID: 'price'
                         },
                         // 多头开仓
                         {
@@ -1549,7 +1864,8 @@
                             pointRadius: 8,
                             pointStyle: 'triangle',
                             showLine: false,
-                            yAxisID: 'price'
+                            yAxisID: 'price',
+                            type: 'scatter'
                         },
                         // 多头平仓
                         {
@@ -1560,7 +1876,8 @@
                             pointRadius: 7,
                             pointStyle: 'rect',
                             showLine: false,
-                            yAxisID: 'price'
+                            yAxisID: 'price',
+                            type: 'scatter'
                         },
                         // 空头开仓
                         {
@@ -1572,7 +1889,8 @@
                             pointStyle: 'triangle',
                             rotation: 180,
                             showLine: false,
-                            yAxisID: 'price'
+                            yAxisID: 'price',
+                            type: 'scatter'
                         },
                         // 空头平仓
                         {
@@ -1583,7 +1901,8 @@
                             pointRadius: 8,
                             pointStyle: 'crossRot',
                             showLine: false,
-                            yAxisID: 'price'
+                            yAxisID: 'price',
+                            type: 'scatter'
                         },
                         // 收益曲线
                         {
@@ -1595,7 +1914,8 @@
                             tension: 0.1,
                             yAxisID: 'return',
                             borderWidth: 2,
-                            pointRadius: 0
+                            pointRadius: 0,
+                            type: 'line'
                         }
                     ]
                 },
@@ -1670,6 +1990,23 @@
                                     return data.kline_data[index] ? data.kline_data[index].time : '';
                                 },
                                 label: function(context) {
+                                    // 处理蜡烛图数据
+                                    if (context.dataset.label === 'K线蜡烛图') {
+                                        const candle = context.raw;
+                                        const trend = candle.c >= candle.o ? '上涨 📈' : '下跌 📉';
+                                        const change = ((candle.c - candle.o) / candle.o * 100);
+                                        const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
+                                        
+                                        return [
+                                            `${trend} ${changeText}`,
+                                            `开盘: ${candle.o.toFixed(2)}`,
+                                            `最高: ${candle.h.toFixed(2)}`,
+                                            `最低: ${candle.l.toFixed(2)}`,
+                                            `收盘: ${candle.c.toFixed(2)}`
+                                        ];
+                                    }
+                                    
+                                    // 处理其他数据集
                                     let label = context.dataset.label || '';
                                     if (label) {
                                         label += ': ';
@@ -1696,6 +2033,80 @@
             
             // 显示指标面板
             document.getElementById('backtest-metrics').style.display = 'block';
+        }
+        
+        // ========== 账户管理功能 ==========
+        function editAccountName() {
+            const currentName = document.getElementById('account-name').textContent;
+            const newName = prompt('请输入新的账户名称:', currentName);
+            
+            if (newName && newName.trim() !== '' && newName !== currentName) {
+                document.getElementById('account-name').textContent = newName.trim();
+                
+                // TODO: 发送更新请求到后端
+                console.log('更新账户名称:', newName.trim());
+                
+                alert('✅ 账户名称更新成功！');
+            }
+        }
+        
+        function refreshAccountInfo() {
+            // 显示加载状态
+            const balanceElement = document.getElementById('account-balance');
+            const availableElement = document.getElementById('available-balance');
+            const frozenElement = document.getElementById('frozen-balance');
+            
+            balanceElement.textContent = '加载中...';
+            availableElement.textContent = '加载中...';
+            frozenElement.textContent = '加载中...';
+            
+            // 模拟刷新延迟
+            setTimeout(() => {
+                // 模拟随机数据变化
+                const baseBalance = 1000000;
+                const variation = (Math.random() - 0.5) * 100000;
+                const newBalance = baseBalance + variation;
+                const frozen = 120000 + (Math.random() - 0.5) * 60000;
+                const available = newBalance - frozen;
+                
+                balanceElement.textContent = `¥${newBalance.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
+                availableElement.textContent = `¥${available.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
+                frozenElement.textContent = `¥${frozen.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
+                
+                // TODO: 发送刷新请求到后端
+                console.log('刷新账户信息完成');
+                
+                alert('🔄 账户信息刷新完成！');
+            }, 1500);
+        }
+        
+        function exportAccountData() {
+            // 生成模拟导出数据
+            const accountData = {
+                accountName: document.getElementById('account-name').textContent,
+                balance: document.getElementById('account-balance').textContent,
+                available: document.getElementById('available-balance').textContent,
+                frozen: document.getElementById('frozen-balance').textContent,
+                exportTime: new Date().toLocaleString('zh-CN'),
+                positions: '当前持仓数据...',
+                trades: '交易记录数据...'
+            };
+            
+            // 创建并下载文件
+            const dataStr = JSON.stringify(accountData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `账户数据_${new Date().toISOString().slice(0, 10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            // TODO: 发送导出请求到后端获取完整数据
+            console.log('导出账户数据:', accountData);
+            
+            alert('📊 账户数据导出完成！');
         }
         
         // 页面加载完成后初始化
