@@ -14,7 +14,7 @@ import sys
 import os
 import json
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Any
 import logging
@@ -36,6 +36,22 @@ from core.multi_strategy_manager import StrategyAllocationMethod
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# 时区配置 - 东8区（北京时间）
+BEIJING_TZ = timezone(timedelta(hours=8))
+
+def beijing_now():
+    """获取东8区当前时间"""
+    return datetime.now(BEIJING_TZ)
+
+def beijing_time(dt=None):
+    """转换为东8区时间"""
+    if dt is None:
+        return beijing_now()
+    if dt.tzinfo is None:
+        # 如果没有时区信息，假设为UTC时间
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(BEIJING_TZ)
 
 # 创建Flask应用
 app = Flask(__name__)
@@ -162,7 +178,7 @@ class DemoDataGenerator:
                 'market_value': 0,
                 'unrealized_pnl': 0,
                 'strategy': 'MA快速-螺纹钢',
-                'open_time': datetime.now() - timedelta(hours=2, minutes=15)
+                'open_time': beijing_now() - timedelta(hours=2, minutes=15)
             },
             'i2405_long': {
                 'symbol': 'i2405', 
@@ -173,7 +189,7 @@ class DemoDataGenerator:
                 'market_value': 0,
                 'unrealized_pnl': 0,
                 'strategy': 'MA策略-铁矿石',
-                'open_time': datetime.now() - timedelta(hours=1, minutes=45)
+                'open_time': beijing_now() - timedelta(hours=1, minutes=45)
             },
             'j2405_short': {
                 'symbol': 'j2405',
@@ -184,7 +200,7 @@ class DemoDataGenerator:
                 'market_value': 0,
                 'unrealized_pnl': 0,
                 'strategy': 'MA策略-焦炭',
-                'open_time': datetime.now() - timedelta(minutes=30)
+                'open_time': beijing_now() - timedelta(minutes=30)
             }
         }
         
@@ -197,7 +213,7 @@ class DemoDataGenerator:
     def _init_trades(self):
         """初始化成交记录"""
         trades = []
-        base_time = datetime.now() - timedelta(hours=6)
+        base_time = beijing_now() - timedelta(hours=6)
         
         # 生成历史成交记录
         trade_data = [
@@ -301,7 +317,7 @@ class DemoDataGenerator:
         
         trade = {
             'id': f'T{1000 + self.trade_counter}',
-            'timestamp': datetime.now(),
+            'timestamp': beijing_now(),
             'symbol': symbol,
             'direction': direction,
             'action': action, 
@@ -341,7 +357,7 @@ def system_status():
     """获取系统状态"""
     
     status = {
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': beijing_now().isoformat(),
         'system_status': demo_data['system_status'],
         'total_strategies': 4,
         'active_strategies': 3,
@@ -363,7 +379,7 @@ def market_data():
     demo_data['market_data'] = ticks
     
     return jsonify({
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': beijing_now().isoformat(),
         'data': ticks
     })
 
@@ -376,7 +392,7 @@ def strategies_status():
     demo_data['strategies'] = strategies
     
     return jsonify({
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': beijing_now().isoformat(),
         'strategies': strategies
     })
 
@@ -477,15 +493,15 @@ def get_positions():
             'pnl_ratio': (pos['unrealized_pnl'] / (pos['avg_price'] * pos['quantity'])) * 100 if pos['quantity'] > 0 else 0,
             'strategy': pos['strategy'],
             'open_time': pos['open_time'].isoformat(),
-            'hold_duration': str(datetime.now() - pos['open_time']).split('.')[0]
+            'hold_duration': str(beijing_now() - pos['open_time']).split('.')[0]
         }
         formatted_positions.append(formatted_pos)
         total_market_value += pos['market_value']
         total_unrealized_pnl += pos['unrealized_pnl']
     
     return jsonify({
-        'timestamp': datetime.now().isoformat(),
-        'current_datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'timestamp': beijing_now().isoformat(),
+        'current_datetime': beijing_now().strftime('%Y-%m-%d %H:%M:%S'),
         'positions': formatted_positions,
         'summary': {
             'total_positions': len(formatted_positions),
@@ -542,12 +558,12 @@ def get_trades():
         formatted_trades.append(formatted_trade)
     
     # 统计信息
-    today_trades = [t for t in trades if t['timestamp'].date() == datetime.now().date()]
+    today_trades = [t for t in trades if t['timestamp'].date() == beijing_now().date()]
     today_pnl = sum(t.get('pnl', 0) for t in today_trades if t.get('pnl') is not None)
     total_commission = sum(t.get('commission', 0) for t in today_trades)
     
     return jsonify({
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': beijing_now().isoformat(),
         'trades': formatted_trades,
         'pagination': {
             'current_page': page,
@@ -1441,13 +1457,13 @@ def main():
     
     # 启动服务器
     print("🚀 启动演示服务器...")
-    print("📊 Web界面地址: http://localhost:5004")
+    print("📊 Web界面地址: http://localhost:5005")
     print("🔄 实时数据: WebSocket连接")
     print("💻 支持功能: 市场数据、策略状态、回测系统、配置管理")
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5004, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5005, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:
