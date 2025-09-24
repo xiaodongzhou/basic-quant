@@ -1,0 +1,103 @@
+allocation_method: weighted
+auto_start: true
+created_time: null
+description: 演示用多策略投资组合，包含不同周期的MA策略
+global_parameters: {}
+monitoring_enabled: true
+portfolio_name: demo_multi_strategy_portfolio_20250924_012421
+reporting_enabled: true
+risk_limits: []
+strategies:
+- description: ''
+  enabled: true
+  parameters:
+    description: 螺纹钢快速MA策略
+    fast_period: 5
+    slow_period: 20
+    symbols:
+    - rb2405
+  strategy_class: MAStrategy
+  strategy_module: strategies.ma_strategy
+  strategy_name: ma_fast_rb
+  tags:
+  - trend
+  - fast
+  - rb
+- description: ''
+  enabled: true
+  parameters:
+    description: 螺纹钢慢速MA策略
+    fast_period: 10
+    slow_period: 50
+    symbols:
+    - rb2405
+  strategy_class: MAStrategy
+  strategy_module: strategies.ma_strategy
+  strategy_name: ma_slow_rb
+  tags:
+  - trend
+  - slow
+  - rb
+- description: ''
+  enabled: true
+  parameters:
+    description: 铁矿石MA策略
+    fast_period: 8
+    slow_period: 25
+    symbols:
+    - i2405
+  strategy_class: MAStrategy
+  strategy_module: strategies.ma_strategy
+  strategy_name: ma_fast_i
+  tags:
+  - trend
+  - fast
+  - iron_ore
+- description: ''
+  enabled: true
+  parameters:
+    description: 焦炭平衡MA策略
+    fast_period: 12
+    slow_period: 30
+    symbols:
+    - j2405
+  strategy_class: MAStrategy
+  strategy_module: strategies.ma_strategy
+  strategy_name: ma_balanced_j
+  tags:
+  - trend
+  - balanced
+  - coke
+strategy_allocations:
+- active: true
+  allocation_amount: 800000.0
+  allocation_ratio: 0.4
+  max_position_ratio: 0.8
+  priority: 1
+  risk_budget: 0.03
+  strategy_name: ma_fast_rb
+- active: true
+  allocation_amount: 500000.0
+  allocation_ratio: 0.25
+  max_position_ratio: 0.6
+  priority: 1
+  risk_budget: 0.02
+  strategy_name: ma_slow_rb
+- active: true
+  allocation_amount: 500000.0
+  allocation_ratio: 0.25
+  max_position_ratio: 0.7
+  priority: 1
+  risk_budget: 0.025
+  strategy_name: ma_fast_i
+- active: true
+  allocation_amount: 200000.0
+  allocation_ratio: 0.1
+  max_position_ratio: 0.5
+  priority: 1
+  risk_budget: 0.015
+  strategy_name: ma_balanced_j
+strategy_groups: []
+total_capital: 2000000.0
+updated_time: null
+version: 1.0.0
