@@ -469,6 +469,174 @@ def run_backtest_api():
         }), 500
 
 
+@app.route('/api/backtest/chart_data')
+def get_backtest_chart_data():
+    """获取回测分析图表数据"""
+    
+    try:
+        # 生成模拟的K线数据和交易信号
+        start_date = datetime(2024, 1, 1)
+        end_date = datetime(2024, 3, 31)
+        
+        # 生成时间序列（每小时）
+        time_series = pd.date_range(start=start_date, end=end_date, freq='H')
+        
+        # 生成模拟K线数据
+        np.random.seed(42)  # 固定随机种子保证一致性
+        
+        initial_price = 3500
+        prices = []
+        current_price = initial_price
+        
+        kline_data = []
+        trade_signals = []
+        portfolio_values = []
+        
+        # 策略状态
+        position = 0  # 0: 空仓, 1: 多头, -1: 空头
+        entry_price = 0
+        initial_capital = 1000000
+        current_capital = initial_capital
+        
+        # MA参数
+        fast_ma = 5
+        slow_ma = 20
+        price_history = []
+        
+        for i, timestamp in enumerate(time_series):
+            # 生成价格走势（模拟期货价格波动）
+            if i == 0:
+                price = initial_price
+            else:
+                # 添加趋势和随机波动
+                trend = 0.001 if i < len(time_series) * 0.6 else -0.0005
+                volatility = np.random.normal(0, 0.01)
+                price = current_price * (1 + trend + volatility)
+                price = max(price, initial_price * 0.8)  # 设置价格下限
+                price = min(price, initial_price * 1.3)  # 设置价格上限
+            
+            current_price = price
+            price_history.append(price)
+            
+            # 生成OHLC数据
+            high = price * (1 + abs(np.random.normal(0, 0.005)))
+            low = price * (1 - abs(np.random.normal(0, 0.005)))
+            open_price = price + np.random.normal(0, price * 0.003)
+            close_price = price
+            
+            kline_data.append({
+                'timestamp': timestamp.isoformat(),
+                'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                'open': round(open_price, 1),
+                'high': round(high, 1),
+                'low': round(low, 1),
+                'close': round(close_price, 1),
+                'volume': np.random.randint(1000, 5000)
+            })
+            
+            # 计算移动平均线
+            if len(price_history) >= slow_ma:
+                fast_ma_value = np.mean(price_history[-fast_ma:])
+                slow_ma_value = np.mean(price_history[-slow_ma:])
+                
+                # 生成交易信号
+                prev_fast = np.mean(price_history[-fast_ma-1:-1]) if len(price_history) > fast_ma else fast_ma_value
+                prev_slow = np.mean(price_history[-slow_ma-1:-1]) if len(price_history) > slow_ma else slow_ma_value
+                
+                # 金叉开多仓
+                if prev_fast <= prev_slow and fast_ma_value > slow_ma_value and position <= 0:
+                    if position == -1:  # 先平空仓
+                        pnl = (entry_price - close_price) * 10  # 10手
+                        current_capital += pnl
+                        trade_signals.append({
+                            'timestamp': timestamp.isoformat(),
+                            'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                            'type': 'close_short',
+                            'price': close_price,
+                            'pnl': pnl
+                        })
+                    
+                    # 开多仓
+                    position = 1
+                    entry_price = close_price
+                    trade_signals.append({
+                        'timestamp': timestamp.isoformat(),
+                        'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                        'type': 'open_long',
+                        'price': close_price,
+                        'pnl': 0
+                    })
+                
+                # 死叉开空仓
+                elif prev_fast >= prev_slow and fast_ma_value < slow_ma_value and position >= 0:
+                    if position == 1:  # 先平多仓
+                        pnl = (close_price - entry_price) * 10  # 10手
+                        current_capital += pnl
+                        trade_signals.append({
+                            'timestamp': timestamp.isoformat(),
+                            'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                            'type': 'close_long',
+                            'price': close_price,
+                            'pnl': pnl
+                        })
+                    
+                    # 开空仓
+                    position = -1
+                    entry_price = close_price
+                    trade_signals.append({
+                        'timestamp': timestamp.isoformat(),
+                        'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                        'type': 'open_short',
+                        'price': close_price,
+                        'pnl': 0
+                    })
+            
+            # 计算当前组合价值
+            unrealized_pnl = 0
+            if position != 0:
+                if position == 1:  # 多头
+                    unrealized_pnl = (close_price - entry_price) * 10
+                else:  # 空头
+                    unrealized_pnl = (entry_price - close_price) * 10
+            
+            portfolio_value = current_capital + unrealized_pnl
+            portfolio_values.append({
+                'timestamp': timestamp.isoformat(),
+                'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                'value': portfolio_value,
+                'return': (portfolio_value - initial_capital) / initial_capital * 100
+            })
+        
+        # 计算性能指标
+        returns = [pv['return'] for pv in portfolio_values]
+        final_return = returns[-1] if returns else 0
+        max_return = max(returns) if returns else 0
+        min_return = min(returns) if returns else 0
+        max_drawdown = max_return - min_return
+        
+        return jsonify({
+            'timestamp': beijing_now().isoformat(),
+            'kline_data': kline_data,
+            'trade_signals': trade_signals,
+            'portfolio_values': portfolio_values,
+            'performance_metrics': {
+                'total_return': final_return,
+                'max_drawdown': max_drawdown,
+                'total_trades': len([t for t in trade_signals if 'open' in t['type']]),
+                'win_rate': 65.4,  # 模拟胜率
+                'profit_trades': len([t for t in trade_signals if t.get('pnl', 0) > 0]),
+                'loss_trades': len([t for t in trade_signals if t.get('pnl', 0) < 0])
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"获取回测图表数据失败: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'获取数据失败: {str(e)}'
+        }), 500
+
+
 @app.route('/api/positions')
 def get_positions():
     """获取实时持仓信息"""
@@ -895,6 +1063,7 @@ def create_demo_templates():
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
     <div id="connection-status" class="disconnected">未连接</div>
@@ -987,6 +1156,38 @@ def create_demo_templates():
             <div class="card" style="grid-column: 1 / -1;">
                 <h3>📊 实时监控图表</h3>
                 <canvas id="priceChart" width="400" height="200"></canvas>
+            </div>
+            
+            <!-- 回测分析图表 -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>📈 回测分析图表 - K线图与交易信号</h3>
+                <div style="margin-bottom: 15px;">
+                    <button class="btn" onclick="loadBacktestChart()" style="margin-right: 10px;">加载回测数据</button>
+                    <span id="backtest-chart-status" style="color: #718096; font-size: 14px;">点击按钮加载回测分析图表</span>
+                </div>
+                <div style="position: relative; height: 500px; overflow: hidden;">
+                    <canvas id="backtestChart" style="display: block; max-width: 100%; max-height: 100%;"></canvas>
+                </div>
+                <div id="backtest-metrics" style="margin-top: 15px; padding: 10px; background: #f7fafc; border-radius: 6px; display: none;">
+                    <div style="display: flex; justify-content: space-around; text-align: center;">
+                        <div>
+                            <span style="display: block; font-size: 12px; color: #718096;">总收益率</span>
+                            <span id="total-return" style="font-weight: 600; color: #2d3748;">-</span>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 12px; color: #718096;">最大回撤</span>
+                            <span id="max-drawdown" style="font-weight: 600; color: #2d3748;">-</span>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 12px; color: #718096;">交易次数</span>
+                            <span id="total-trades" style="font-weight: 600; color: #2d3748;">-</span>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 12px; color: #718096;">胜率</span>
+                            <span id="win-rate" style="font-weight: 600; color: #2d3748;">-</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1416,6 +1617,206 @@ def create_demo_templates():
             loadTradesPage(1);
         }
         
+        // 回测分析图表相关
+        let backtestChart = null;
+        
+        function loadBacktestChart() {
+            const statusElement = document.getElementById('backtest-chart-status');
+            statusElement.textContent = '正在加载回测数据...';
+            statusElement.style.color = '#5a67d8';
+            
+            fetch('/api/backtest/chart_data')
+                .then(response => response.json())
+                .then(data => {
+                    createBacktestChart(data);
+                    updateBacktestMetrics(data.performance_metrics);
+                    statusElement.textContent = '回测数据加载完成';
+                    statusElement.style.color = '#48bb78';
+                })
+                .catch(error => {
+                    console.error('Error loading backtest chart:', error);
+                    statusElement.textContent = '数据加载失败';
+                    statusElement.style.color = '#f56565';
+                });
+        }
+        
+        function createBacktestChart(data) {
+            const ctx = document.getElementById('backtestChart').getContext('2d');
+            
+            // 销毁现有图表
+            if (backtestChart) {
+                backtestChart.destroy();
+            }
+            
+            // 准备K线数据
+            const klineData = data.kline_data.map(item => ({
+                x: item.time,
+                o: item.open,
+                h: item.high,
+                l: item.low,
+                c: item.close
+            }));
+            
+            // 准备交易信号数据
+            const longEntries = data.trade_signals.filter(signal => signal.type === 'open_long')
+                .map(signal => ({ x: signal.time, y: signal.price }));
+            const longExits = data.trade_signals.filter(signal => signal.type === 'close_long')
+                .map(signal => ({ x: signal.time, y: signal.price }));
+            const shortEntries = data.trade_signals.filter(signal => signal.type === 'open_short')
+                .map(signal => ({ x: signal.time, y: signal.price }));
+            const shortExits = data.trade_signals.filter(signal => signal.type === 'close_short')
+                .map(signal => ({ x: signal.time, y: signal.price }));
+            
+            // 准备收益曲线数据
+            const portfolioData = data.portfolio_values.map(item => ({
+                x: item.time,
+                y: item.return
+            }));
+            
+            backtestChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [
+                        // K线图（用线图模拟）
+                        {
+                            label: 'K线收盘价',
+                            data: klineData.map(k => ({ x: k.x, y: k.c })),
+                            borderColor: '#4299e1',
+                            backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                            fill: false,
+                            tension: 0,
+                            yAxisID: 'price',
+                            pointRadius: 0,
+                            borderWidth: 1
+                        },
+                        // 多头开仓
+                        {
+                            label: '买入开仓',
+                            data: longEntries,
+                            backgroundColor: '#48bb78',
+                            borderColor: '#48bb78',
+                            pointRadius: 6,
+                            pointStyle: 'triangle',
+                            showLine: false,
+                            yAxisID: 'price'
+                        },
+                        // 多头平仓
+                        {
+                            label: '卖出平仓',
+                            data: longExits,
+                            backgroundColor: '#ed8936',
+                            borderColor: '#ed8936',
+                            pointRadius: 6,
+                            pointStyle: 'rectRot',
+                            showLine: false,
+                            yAxisID: 'price'
+                        },
+                        // 空头开仓
+                        {
+                            label: '卖出开仓',
+                            data: shortEntries,
+                            backgroundColor: '#f56565',
+                            borderColor: '#f56565',
+                            pointRadius: 6,
+                            pointStyle: 'triangleDown',
+                            showLine: false,
+                            yAxisID: 'price'
+                        },
+                        // 空头平仓
+                        {
+                            label: '买入平仓',
+                            data: shortExits,
+                            backgroundColor: '#9f7aea',
+                            borderColor: '#9f7aea',
+                            pointRadius: 6,
+                            pointStyle: 'cross',
+                            showLine: false,
+                            yAxisID: 'price'
+                        },
+                        // 收益曲线
+                        {
+                            label: '收益曲线 (%)',
+                            data: portfolioData,
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                            fill: false,
+                            tension: 0.1,
+                            yAxisID: 'return',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                parser: 'YYYY-MM-DD HH:mm',
+                                displayFormats: {
+                                    hour: 'MM-DD HH:mm',
+                                    day: 'MM-DD'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: '时间'
+                            }
+                        },
+                        price: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '价格'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
+                        return: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '收益率 (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '回测分析 - MA策略交易信号与收益曲线 (2024-01-01 至 2024-03-31)'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateBacktestMetrics(metrics) {
+            document.getElementById('total-return').textContent = `${metrics.total_return.toFixed(2)}%`;
+            document.getElementById('max-drawdown').textContent = `${metrics.max_drawdown.toFixed(2)}%`;
+            document.getElementById('total-trades').textContent = metrics.total_trades;
+            document.getElementById('win-rate').textContent = `${metrics.win_rate.toFixed(1)}%`;
+            
+            // 显示指标面板
+            document.getElementById('backtest-metrics').style.display = 'block';
+        }
+        
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', () => {
             loadInitialData();
@@ -1457,13 +1858,13 @@ def main():
     
     # 启动服务器
     print("🚀 启动演示服务器...")
-    print("📊 Web界面地址: http://localhost:5005")
+    print("📊 Web界面地址: http://localhost:5006")
     print("🔄 实时数据: WebSocket连接")
     print("💻 支持功能: 市场数据、策略状态、回测系统、配置管理")
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5005, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5006, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:
