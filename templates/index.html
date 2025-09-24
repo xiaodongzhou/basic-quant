@@ -192,7 +192,6 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
     <div id="connection-status" class="disconnected">未连接</div>
@@ -777,101 +776,130 @@
                 backtestChart.destroy();
             }
             
-            // 准备K线数据
-            const klineData = data.kline_data.map(item => ({
-                x: item.time,
-                o: item.open,
-                h: item.high,
-                l: item.low,
-                c: item.close
-            }));
+            // 简化数据处理，使用索引而不是时间
+            const labels = data.kline_data.map((item, index) => {
+                // 每50个数据点显示一个标签
+                return index % 50 === 0 ? item.time.substring(5, 16) : '';
+            });
             
-            // 准备交易信号数据
-            const longEntries = data.trade_signals.filter(signal => signal.type === 'open_long')
-                .map(signal => ({ x: signal.time, y: signal.price }));
-            const longExits = data.trade_signals.filter(signal => signal.type === 'close_long')
-                .map(signal => ({ x: signal.time, y: signal.price }));
-            const shortEntries = data.trade_signals.filter(signal => signal.type === 'open_short')
-                .map(signal => ({ x: signal.time, y: signal.price }));
-            const shortExits = data.trade_signals.filter(signal => signal.type === 'close_short')
-                .map(signal => ({ x: signal.time, y: signal.price }));
+            // 准备K线收盘价数据
+            const priceData = data.kline_data.map(item => item.close);
+            
+            // 创建价格到索引的映射
+            const timeToIndex = {};
+            data.kline_data.forEach((item, index) => {
+                timeToIndex[item.time] = index;
+            });
+            
+            // 准备交易信号数据（转换为索引位置）
+            const longEntries = data.trade_signals
+                .filter(signal => signal.type === 'open_long')
+                .map(signal => {
+                    const index = timeToIndex[signal.time];
+                    return index !== undefined ? { x: index, y: signal.price } : null;
+                })
+                .filter(item => item !== null);
+                
+            const longExits = data.trade_signals
+                .filter(signal => signal.type === 'close_long')
+                .map(signal => {
+                    const index = timeToIndex[signal.time];
+                    return index !== undefined ? { x: index, y: signal.price } : null;
+                })
+                .filter(item => item !== null);
+                
+            const shortEntries = data.trade_signals
+                .filter(signal => signal.type === 'open_short')
+                .map(signal => {
+                    const index = timeToIndex[signal.time];
+                    return index !== undefined ? { x: index, y: signal.price } : null;
+                })
+                .filter(item => item !== null);
+                
+            const shortExits = data.trade_signals
+                .filter(signal => signal.type === 'close_short')
+                .map(signal => {
+                    const index = timeToIndex[signal.time];
+                    return index !== undefined ? { x: index, y: signal.price } : null;
+                })
+                .filter(item => item !== null);
             
             // 准备收益曲线数据
-            const portfolioData = data.portfolio_values.map(item => ({
-                x: item.time,
-                y: item.return
-            }));
+            const returnData = data.portfolio_values.map(item => item.return);
             
             backtestChart = new Chart(ctx, {
                 type: 'line',
                 data: {
+                    labels: labels,
                     datasets: [
-                        // K线图（用线图模拟）
+                        // K线收盘价
                         {
                             label: 'K线收盘价',
-                            data: klineData.map(k => ({ x: k.x, y: k.c })),
+                            data: priceData,
                             borderColor: '#4299e1',
                             backgroundColor: 'rgba(66, 153, 225, 0.1)',
                             fill: false,
-                            tension: 0,
+                            tension: 0.1,
                             yAxisID: 'price',
                             pointRadius: 0,
-                            borderWidth: 1
+                            borderWidth: 1.5
                         },
                         // 多头开仓
                         {
-                            label: '买入开仓',
+                            label: '🔺 买入开仓',
                             data: longEntries,
                             backgroundColor: '#48bb78',
                             borderColor: '#48bb78',
-                            pointRadius: 6,
+                            pointRadius: 8,
                             pointStyle: 'triangle',
                             showLine: false,
                             yAxisID: 'price'
                         },
                         // 多头平仓
                         {
-                            label: '卖出平仓',
+                            label: '⬜ 卖出平仓',
                             data: longExits,
                             backgroundColor: '#ed8936',
                             borderColor: '#ed8936',
-                            pointRadius: 6,
-                            pointStyle: 'rectRot',
+                            pointRadius: 7,
+                            pointStyle: 'rect',
                             showLine: false,
                             yAxisID: 'price'
                         },
                         // 空头开仓
                         {
-                            label: '卖出开仓',
+                            label: '🔻 卖出开仓',
                             data: shortEntries,
                             backgroundColor: '#f56565',
                             borderColor: '#f56565',
-                            pointRadius: 6,
-                            pointStyle: 'triangleDown',
+                            pointRadius: 8,
+                            pointStyle: 'triangle',
+                            rotation: 180,
                             showLine: false,
                             yAxisID: 'price'
                         },
                         // 空头平仓
                         {
-                            label: '买入平仓',
+                            label: '✖️ 买入平仓',
                             data: shortExits,
                             backgroundColor: '#9f7aea',
                             borderColor: '#9f7aea',
-                            pointRadius: 6,
-                            pointStyle: 'cross',
+                            pointRadius: 8,
+                            pointStyle: 'crossRot',
                             showLine: false,
                             yAxisID: 'price'
                         },
                         // 收益曲线
                         {
-                            label: '收益曲线 (%)',
-                            data: portfolioData,
+                            label: '📈 收益曲线 (%)',
+                            data: returnData,
                             borderColor: '#e53e3e',
                             backgroundColor: 'rgba(229, 62, 62, 0.1)',
                             fill: false,
                             tension: 0.1,
                             yAxisID: 'return',
-                            borderWidth: 2
+                            borderWidth: 2,
+                            pointRadius: 0
                         }
                     ]
                 },
@@ -884,17 +912,13 @@
                     },
                     scales: {
                         x: {
-                            type: 'time',
-                            time: {
-                                parser: 'YYYY-MM-DD HH:mm',
-                                displayFormats: {
-                                    hour: 'MM-DD HH:mm',
-                                    day: 'MM-DD'
-                                }
-                            },
+                            display: true,
                             title: {
                                 display: true,
-                                text: '时间'
+                                text: '时间 (2024年1月-3月)'
+                            },
+                            ticks: {
+                                maxTicksLimit: 10
                             }
                         },
                         price: {
@@ -903,10 +927,10 @@
                             position: 'left',
                             title: {
                                 display: true,
-                                text: '价格'
+                                text: '价格 (元/吨)'
                             },
                             grid: {
-                                drawOnChartArea: false,
+                                color: 'rgba(0,0,0,0.1)',
                             },
                         },
                         return: {
@@ -920,16 +944,48 @@
                             grid: {
                                 drawOnChartArea: false,
                             },
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(1) + '%';
+                                }
+                            }
                         }
                     },
                     plugins: {
                         title: {
                             display: true,
-                            text: '回测分析 - MA策略交易信号与收益曲线 (2024-01-01 至 2024-03-31)'
+                            text: '📊 回测分析图表 - MA策略K线图与交易信号 (2024-01-01 至 2024-03-31)',
+                            font: {
+                                size: 16
+                            }
                         },
                         legend: {
                             display: true,
-                            position: 'top'
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return data.kline_data[index] ? data.kline_data[index].time : '';
+                                },
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.dataset.yAxisID === 'return') {
+                                        label += context.formattedValue + '%';
+                                    } else {
+                                        label += context.formattedValue;
+                                    }
+                                    return label;
+                                }
+                            }
                         }
                     }
                 }
