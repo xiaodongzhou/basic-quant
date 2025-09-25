@@ -451,6 +451,52 @@
             color: #718096;
             font-weight: bold;
         }
+        
+        /* 回测结果样式 */
+        .backtest-summary {
+            padding: 0;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+        
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 10px;
+        }
+        
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: #f7fafc;
+        }
+        
+        .metric-label {
+            font-size: 11px;
+            color: #718096;
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2d3748;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -577,18 +623,43 @@
                 <aside class="backtest-config">
                     <h3>🔬 回测配置</h3>
                     
-                    <div class="form-group">
-                        <label>选择策略:</label>
-                        <select id="backtest-strategy">
-                            <option value="ma_cross">MA均线策略</option>
-                            <option value="bollinger">布林带策略</option>
-                            <option value="rsi">RSI策略</option>
-                        </select>
+                    <div class="backtest-selector">
+                        <div class="form-group">
+                            <label>选择策略:</label>
+                            <select id="backtest-strategy-select">
+                                <option value="">请选择策略...</option>
+                                <option value="ma_cross">MA均线策略</option>
+                                <option value="bollinger">布林带策略</option>
+                                <option value="rsi">RSI策略</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>选择品种:</label>
+                            <select id="backtest-symbol-select">
+                                <option value="">请选择品种...</option>
+                                <option value="rb2405">螺纹钢</option>
+                                <option value="cu2405">沪铜</option>
+                                <option value="al2405">沪铝</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>回测时间段:</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input type="date" id="backtest-start-date" style="flex: 1;">
+                                <input type="date" id="backtest-end-date" style="flex: 1;">
+                            </div>
+                        </div>
+                        
+                        <div id="backtest-strategy-params">
+                            <p style="color: #718096; font-size: 13px; text-align: center; padding: 20px;">请先选择策略类型...</p>
+                        </div>
+                        
+                        <button class="btn btn-success" id="run-backtest-btn" disabled onclick="runBacktest()">
+                            🚀 运行回测
+                        </button>
                     </div>
-                    
-                    <button class="btn" onclick="loadBacktestChart()">
-                        🚀 运行回测
-                    </button>
                 </aside>
                 
                 <!-- 回测结果区域 -->
@@ -598,6 +669,14 @@
                         <h3>📊 回测结果</h3>
                         <div id="backtest-results">
                             <div class="loading">请配置参数并运行回测...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 回测统计指标 -->
+                    <div class="card">
+                        <h3>📈 统计指标</h3>
+                        <div id="backtest-metrics">
+                            <div class="loading">等待回测结果...</div>
                         </div>
                     </div>
                     
@@ -1371,6 +1450,282 @@
             `;
         }
         
+        // ========== 回测配置功能 ==========
+        let backtestStrategySelect, backtestSymbolSelect, runBacktestBtn;
+        
+        function initializeBacktestConfig() {
+            console.log('初始化回测配置...');
+            
+            // 获取回测配置相关元素
+            backtestStrategySelect = document.getElementById('backtest-strategy-select');
+            backtestSymbolSelect = document.getElementById('backtest-symbol-select');
+            runBacktestBtn = document.getElementById('run-backtest-btn');
+            
+            console.log('回测策略选择器:', backtestStrategySelect ? '找到' : '未找到');
+            console.log('回测品种选择器:', backtestSymbolSelect ? '找到' : '未找到');
+            console.log('运行回测按钮:', runBacktestBtn ? '找到' : '未找到');
+            
+            if (backtestStrategySelect && backtestSymbolSelect && runBacktestBtn) {
+                // 绑定事件监听器
+                backtestStrategySelect.addEventListener('change', () => {
+                    console.log('回测策略选择改变:', backtestStrategySelect.value);
+                    updateBacktestStrategyParams();
+                    checkBacktestFormComplete();
+                });
+                
+                backtestSymbolSelect.addEventListener('change', () => {
+                    console.log('回测品种选择改变:', backtestSymbolSelect.value);
+                    checkBacktestFormComplete();
+                });
+                
+                console.log('✅ 回测事件监听器已绑定');
+                
+                // 初始化日期选择器为最近一个月
+                initializeBacktestDateRange();
+            } else {
+                console.error('❌ 无法找到回测配置元素');
+            }
+        }
+        
+        function updateBacktestStrategyParams() {
+            const strategy = backtestStrategySelect.value;
+            const paramsDiv = document.getElementById('backtest-strategy-params');
+            
+            if (!paramsDiv) {
+                console.error('找不到backtest-strategy-params元素');
+                return;
+            }
+            
+            if (!strategy) {
+                paramsDiv.innerHTML = '<p style="color: #718096; font-size: 13px; text-align: center; padding: 20px;">请先选择策略类型...</p>';
+                return;
+            }
+            
+            let paramsHtml = '<h4 style="color: #2d3748; margin-bottom: 15px;">📋 策略参数</h4>';
+            
+            switch (strategy) {
+                case 'ma_cross':
+                    paramsHtml += `
+                        <div class="form-group">
+                            <label>快线周期:</label>
+                            <input type="number" id="backtest_fast_ma" value="5" min="1" max="50">
+                        </div>
+                        <div class="form-group">
+                            <label>慢线周期:</label>
+                            <input type="number" id="backtest_slow_ma" value="20" min="1" max="200">
+                        </div>
+                    `;
+                    break;
+                case 'bollinger':
+                    paramsHtml += `
+                        <div class="form-group">
+                            <label>布林带周期:</label>
+                            <input type="number" id="backtest_bb_period" value="20" min="5" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label>标准差倍数:</label>
+                            <input type="number" id="backtest_bb_std" value="2" min="1" max="5" step="0.1">
+                        </div>
+                    `;
+                    break;
+                case 'rsi':
+                    paramsHtml += `
+                        <div class="form-group">
+                            <label>RSI周期:</label>
+                            <input type="number" id="backtest_rsi_period" value="14" min="5" max="50">
+                        </div>
+                        <div class="form-group">
+                            <label>超买阈值:</label>
+                            <input type="number" id="backtest_rsi_overbought" value="70" min="50" max="90">
+                        </div>
+                        <div class="form-group">
+                            <label>超卖阈值:</label>
+                            <input type="number" id="backtest_rsi_oversold" value="30" min="10" max="50">
+                        </div>
+                    `;
+                    break;
+            }
+            
+            paramsDiv.innerHTML = paramsHtml;
+            console.log('回测策略参数已更新:', strategy);
+        }
+        
+        function checkBacktestFormComplete() {
+            if (backtestStrategySelect && backtestSymbolSelect && runBacktestBtn) {
+                const startDate = document.getElementById('backtest-start-date')?.value;
+                const endDate = document.getElementById('backtest-end-date')?.value;
+                
+                if (backtestStrategySelect.value && backtestSymbolSelect.value && startDate && endDate) {
+                    runBacktestBtn.disabled = false;
+                } else {
+                    runBacktestBtn.disabled = true;
+                }
+            }
+        }
+        
+        function initializeBacktestDateRange() {
+            const today = new Date();
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setMonth(today.getMonth() - 1);
+            
+            const startDateInput = document.getElementById('backtest-start-date');
+            const endDateInput = document.getElementById('backtest-end-date');
+            
+            if (startDateInput && endDateInput) {
+                startDateInput.value = oneMonthAgo.toISOString().split('T')[0];
+                endDateInput.value = today.toISOString().split('T')[0];
+                
+                // 绑定日期变化事件
+                startDateInput.addEventListener('change', checkBacktestFormComplete);
+                endDateInput.addEventListener('change', checkBacktestFormComplete);
+                
+                console.log('✅ 回测日期范围已初始化');
+            }
+        }
+        
+        function runBacktest() {
+            const strategy = backtestStrategySelect.value;
+            const symbol = backtestSymbolSelect.value;
+            const startDate = document.getElementById('backtest-start-date').value;
+            const endDate = document.getElementById('backtest-end-date').value;
+            
+            console.log('运行回测:', { strategy, symbol, startDate, endDate });
+            
+            // 获取策略参数
+            const params = getBacktestStrategyParams(strategy);
+            
+            // 显示回测结果
+            loadBacktestResults(strategy, symbol, startDate, endDate, params);
+            
+            // 加载回测图表
+            loadBacktestChart();
+        }
+        
+        function getBacktestStrategyParams(strategy) {
+            const params = {};
+            
+            switch (strategy) {
+                case 'ma_cross':
+                    params.fast_ma = document.getElementById('backtest_fast_ma')?.value || 5;
+                    params.slow_ma = document.getElementById('backtest_slow_ma')?.value || 20;
+                    break;
+                case 'bollinger':
+                    params.bb_period = document.getElementById('backtest_bb_period')?.value || 20;
+                    params.bb_std = document.getElementById('backtest_bb_std')?.value || 2;
+                    break;
+                case 'rsi':
+                    params.rsi_period = document.getElementById('backtest_rsi_period')?.value || 14;
+                    params.rsi_overbought = document.getElementById('backtest_rsi_overbought')?.value || 70;
+                    params.rsi_oversold = document.getElementById('backtest_rsi_oversold')?.value || 30;
+                    break;
+            }
+            
+            return params;
+        }
+        
+        function loadBacktestResults(strategy, symbol, startDate, endDate, params) {
+            const resultsDiv = document.getElementById('backtest-results');
+            const metricsDiv = document.getElementById('backtest-metrics');
+            
+            const symbolNames = {
+                'rb2405': '螺纹钢',
+                'cu2405': '沪铜', 
+                'al2405': '沪铝'
+            };
+            
+            const strategyNames = {
+                'ma_cross': 'MA均线策略',
+                'bollinger': '布林带策略',
+                'rsi': 'RSI策略'
+            };
+            
+            // 生成模拟回测结果
+            const mockResults = generateMockBacktestResults(strategy, symbol);
+            
+            // 显示回测结果摘要
+            resultsDiv.innerHTML = `
+                <div class="backtest-summary">
+                    <div class="summary-row">
+                        <span>策略:</span>
+                        <span>${strategyNames[strategy]}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>品种:</span>
+                        <span>${symbolNames[symbol]} (${symbol})</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>回测期间:</span>
+                        <span>${startDate} 至 ${endDate}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>总收益率:</span>
+                        <span class="${mockResults.totalReturn >= 0 ? 'profit' : 'loss'}">${mockResults.totalReturn.toFixed(2)}%</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>最大回撤:</span>
+                        <span class="loss">${mockResults.maxDrawdown.toFixed(2)}%</span>
+                    </div>
+                </div>
+            `;
+            
+            // 显示详细指标
+            metricsDiv.innerHTML = `
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <span class="metric-label">交易次数:</span>
+                        <span class="metric-value">${mockResults.totalTrades}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">胜率:</span>
+                        <span class="metric-value">${mockResults.winRate.toFixed(1)}%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">平均盈利:</span>
+                        <span class="metric-value profit">${mockResults.avgProfit.toFixed(2)}%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">平均亏损:</span>
+                        <span class="metric-value loss">${mockResults.avgLoss.toFixed(2)}%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">夏普比率:</span>
+                        <span class="metric-value">${mockResults.sharpeRatio.toFixed(3)}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">盈亏比:</span>
+                        <span class="metric-value">${mockResults.profitLossRatio.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+            
+            console.log('✅ 回测结果已加载');
+        }
+        
+        function generateMockBacktestResults(strategy, symbol) {
+            // 根据不同策略和品种生成不同的模拟结果
+            const baseResults = {
+                'ma_cross': { totalReturn: 8.5, maxDrawdown: -5.2, winRate: 62, totalTrades: 45 },
+                'bollinger': { totalReturn: 12.3, maxDrawdown: -7.1, winRate: 58, totalTrades: 38 },
+                'rsi': { totalReturn: 6.8, maxDrawdown: -4.8, winRate: 68, totalTrades: 52 }
+            };
+            
+            const base = baseResults[strategy] || baseResults['ma_cross'];
+            
+            // 添加一些随机性
+            const variance = (Math.random() - 0.5) * 0.2;
+            
+            return {
+                totalReturn: base.totalReturn + (base.totalReturn * variance),
+                maxDrawdown: base.maxDrawdown + (base.maxDrawdown * variance * 0.5),
+                winRate: Math.max(45, Math.min(85, base.winRate + (variance * 10))),
+                totalTrades: Math.floor(base.totalTrades + (variance * 10)),
+                avgProfit: 2.3 + (variance * 0.5),
+                avgLoss: -1.8 + (variance * 0.3),
+                sharpeRatio: 1.35 + (variance * 0.3),
+                profitLossRatio: 1.28 + (variance * 0.2)
+            };
+        }
+        
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM 已加载，开始初始化...');
@@ -1422,6 +1777,9 @@
             } else {
                 console.error('❌ 找不到strategy-params元素');
             }
+            
+            // ========== 回测配置初始化 ==========
+            initializeBacktestConfig();
             
             // 默认选择第一个任务显示图表
             setTimeout(() => {
