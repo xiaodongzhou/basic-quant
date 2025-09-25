@@ -369,6 +369,88 @@
             padding: 40px;
             font-size: 14px;
         }
+        
+        /* 用户管理表格样式 */
+        .config-table, .positions-table, .trades-table, .market-table, .strategy-table {
+            width: 100%;
+        }
+        
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+        
+        .config-row:last-child {
+            border-bottom: none;
+        }
+        
+        .table-header {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            padding: 8px 12px;
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: bold;
+            font-size: 12px;
+            color: #2d3748;
+        }
+        
+        .table-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        
+        .table-row:hover {
+            background: #f7fafc;
+        }
+        
+        .table-row:last-child {
+            border-bottom: none;
+        }
+        
+        .profit {
+            color: #e53e3e !important;
+            font-weight: bold;
+        }
+        
+        .loss {
+            color: #38a169 !important;
+            font-weight: bold;
+        }
+        
+        .long {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+        
+        .short {
+            color: #38a169;
+            font-weight: bold;
+        }
+        
+        .status-running {
+            color: #48bb78;
+            font-weight: bold;
+        }
+        
+        .status-paused {
+            color: #ed8936;
+            font-weight: bold;
+        }
+        
+        .status-stopped {
+            color: #718096;
+            font-weight: bold;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -595,6 +677,11 @@
                 });
                 document.getElementById(tabId === 'live' ? 'live-trading' : 
                                       tabId === 'backtest' ? 'backtest' : 'management').classList.add('active');
+                
+                // 如果切换到用户管理，加载数据
+                if (tabId === 'management') {
+                    loadManagementData();
+                }
             });
         });
         
@@ -612,8 +699,69 @@
             }
         }
         
-        strategySelect.addEventListener('change', checkFormComplete);
+        strategySelect.addEventListener('change', () => {
+            updateStrategyParams();
+            checkFormComplete();
+        });
         symbolSelect.addEventListener('change', checkFormComplete);
+        
+        // 更新策略参数配置界面
+        function updateStrategyParams() {
+            const strategy = strategySelect.value;
+            const paramsDiv = document.getElementById('strategy-params');
+            
+            if (!strategy) {
+                paramsDiv.innerHTML = '';
+                return;
+            }
+            
+            let paramsHtml = '<h4>📋 策略参数</h4>';
+            
+            switch (strategy) {
+                case 'ma_cross':
+                    paramsHtml += `
+                        <div class="form-group">
+                            <label>快线周期:</label>
+                            <input type="number" id="fast_ma" value="5" min="1" max="50">
+                        </div>
+                        <div class="form-group">
+                            <label>慢线周期:</label>
+                            <input type="number" id="slow_ma" value="20" min="1" max="200">
+                        </div>
+                    `;
+                    break;
+                case 'bollinger':
+                    paramsHtml += `
+                        <div class="form-group">
+                            <label>布林带周期:</label>
+                            <input type="number" id="bb_period" value="20" min="5" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label>标准差倍数:</label>
+                            <input type="number" id="bb_std" value="2" min="1" max="5" step="0.1">
+                        </div>
+                    `;
+                    break;
+                case 'rsi':
+                    paramsHtml += `
+                        <div class="form-group">
+                            <label>RSI周期:</label>
+                            <input type="number" id="rsi_period" value="14" min="5" max="50">
+                        </div>
+                        <div class="form-group">
+                            <label>超买阈值:</label>
+                            <input type="number" id="rsi_overbought" value="70" min="50" max="90">
+                        </div>
+                        <div class="form-group">
+                            <label>超卖阈值:</label>
+                            <input type="number" id="rsi_oversold" value="30" min="10" max="50">
+                        </div>
+                    `;
+                    break;
+            }
+            
+            paramsDiv.innerHTML = paramsHtml;
+        }
         
         // 添加任务按钮点击事件
         addTaskBtn.addEventListener('click', () => {
@@ -933,6 +1081,190 @@
             connectionStatus.textContent = '未连接';
             connectionStatus.className = 'disconnected';
         });
+        
+        // ========== 用户管理数据加载 ==========
+        function loadManagementData() {
+            console.log('Loading management data...');
+            
+            // 加载投资组合配置
+            loadPortfolioConfig();
+            // 加载实时持仓
+            loadPositionsData();
+            // 加载成交记录
+            loadTradesData();
+            // 加载市场数据
+            loadMarketData();
+            // 加载策略状态
+            loadStrategyStatus();
+        }
+        
+        function loadPortfolioConfig() {
+            const portfolioDiv = document.getElementById('portfolio-config');
+            portfolioDiv.innerHTML = `
+                <div class="config-table">
+                    <div class="config-row">
+                        <span>总资金:</span>
+                        <span>¥1,000,000</span>
+                    </div>
+                    <div class="config-row">
+                        <span>可用资金:</span>
+                        <span>¥850,000</span>
+                    </div>
+                    <div class="config-row">
+                        <span>持仓资金:</span>
+                        <span>¥150,000</span>
+                    </div>
+                    <div class="config-row">
+                        <span>风险等级:</span>
+                        <span>中等</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function loadPositionsData() {
+            const positionsDiv = document.getElementById('positions-data');
+            positionsDiv.innerHTML = `
+                <div class="positions-table">
+                    <div class="table-header">
+                        <span>品种</span>
+                        <span>方向</span>
+                        <span>数量</span>
+                        <span>开仓价</span>
+                        <span>现价</span>
+                        <span>盈亏</span>
+                    </div>
+                    <div class="table-row">
+                        <span>螺纹钢2405</span>
+                        <span class="long">多</span>
+                        <span>2手</span>
+                        <span>3500</span>
+                        <span>3520</span>
+                        <span class="profit">+400</span>
+                    </div>
+                    <div class="table-row">
+                        <span>沪铜2405</span>
+                        <span class="short">空</span>
+                        <span>1手</span>
+                        <span>71200</span>
+                        <span>71100</span>
+                        <span class="profit">+500</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function loadTradesData() {
+            const tradesDiv = document.getElementById('trades-data');
+            tradesDiv.innerHTML = `
+                <div class="trades-table">
+                    <div class="table-header">
+                        <span>时间</span>
+                        <span>品种</span>
+                        <span>方向</span>
+                        <span>数量</span>
+                        <span>价格</span>
+                        <span>策略</span>
+                    </div>
+                    <div class="table-row">
+                        <span>14:32:15</span>
+                        <span>螺纹钢2405</span>
+                        <span class="long">买入</span>
+                        <span>1手</span>
+                        <span>3520</span>
+                        <span>MA策略</span>
+                    </div>
+                    <div class="table-row">
+                        <span>13:45:22</span>
+                        <span>沪铜2405</span>
+                        <span class="short">卖出</span>
+                        <span>1手</span>
+                        <span>71100</span>
+                        <span>布林带策略</span>
+                    </div>
+                    <div class="table-row">
+                        <span>12:18:33</span>
+                        <span>沪铝2405</span>
+                        <span class="long">买入</span>
+                        <span>2手</span>
+                        <span>19850</span>
+                        <span>RSI策略</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function loadMarketData() {
+            const marketDiv = document.getElementById('market-data');
+            marketDiv.innerHTML = `
+                <div class="market-table">
+                    <div class="table-header">
+                        <span>品种</span>
+                        <span>最新价</span>
+                        <span>涨跌</span>
+                        <span>涨跌幅</span>
+                        <span>成交量</span>
+                    </div>
+                    <div class="table-row">
+                        <span>螺纹钢2405</span>
+                        <span>3520</span>
+                        <span class="profit">+15</span>
+                        <span class="profit">+0.43%</span>
+                        <span>1.2万手</span>
+                    </div>
+                    <div class="table-row">
+                        <span>沪铜2405</span>
+                        <span>71100</span>
+                        <span class="loss">-50</span>
+                        <span class="loss">-0.07%</span>
+                        <span>8.5千手</span>
+                    </div>
+                    <div class="table-row">
+                        <span>沪铝2405</span>
+                        <span>19850</span>
+                        <span class="profit">+25</span>
+                        <span class="profit">+0.13%</span>
+                        <span>6.2千手</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function loadStrategyStatus() {
+            const strategyDiv = document.getElementById('strategy-status');
+            strategyDiv.innerHTML = `
+                <div class="strategy-table">
+                    <div class="table-header">
+                        <span>策略名称</span>
+                        <span>状态</span>
+                        <span>运行时间</span>
+                        <span>今日盈亏</span>
+                        <span>胜率</span>
+                    </div>
+                    <div class="table-row">
+                        <span>MA均线策略</span>
+                        <span class="status-running">运行中</span>
+                        <span>2小时36分</span>
+                        <span class="profit">+1,250</span>
+                        <span>65%</span>
+                    </div>
+                    <div class="table-row">
+                        <span>布林带策略</span>
+                        <span class="status-paused">暂停</span>
+                        <span>45分钟</span>
+                        <span class="profit">+800</span>
+                        <span>72%</span>
+                    </div>
+                    <div class="table-row">
+                        <span>RSI策略</span>
+                        <span class="status-stopped">已停止</span>
+                        <span>1小时15分</span>
+                        <span class="loss">-320</span>
+                        <span>58%</span>
+                    </div>
+                </div>
+            `;
+        }
         
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', () => {
