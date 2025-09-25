@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>功能测试页面</title>
+</head>
+<body>
+    <h1>策略配置功能测试</h1>
+    <p>请访问: <a href="https://5010-iqwt7pakk30j34exwvp41-6532622b.e2b.dev" target="_blank">主页面</a></p>
+    
+    <h2>测试步骤：</h2>
+    <ol>
+        <li>点击"实盘运行"标签</li>
+        <li>在左侧策略配置区域，选择策略类型</li>
+        <li>检查是否出现参数配置表单</li>
+        <li>选择品种后，检查"添加到实盘"按钮是否激活</li>
+        <li>点击添加按钮，检查任务是否出现在列表中</li>
+        <li>检查任务是否有暂停/删除按钮</li>
+    </ol>
+    
+    <script>
+        // 自动打开主页面并进行测试
+        setTimeout(() => {
+            const mainWindow = window.open('https://5010-iqwt7pakk30j34exwvp41-6532622b.e2b.dev', 'main');
+            
+            setTimeout(() => {
+                try {
+                    // 尝试在主窗口中测试功能
+                    const doc = mainWindow.document;
+                    const strategySelect = doc.getElementById('strategy-select');
+                    const paramsDiv = doc.getElementById('strategy-params');
+                    
+                    if (strategySelect && paramsDiv) {
+                        console.log('找到策略选择器和参数区域');
+                        
+                        // 模拟选择策略
+                        strategySelect.value = 'ma_cross';
+                        strategySelect.dispatchEvent(new Event('change'));
+                        
+                        setTimeout(() => {
+                            if (paramsDiv.innerHTML.includes('快线周期')) {
+                                console.log('✅ 策略参数配置功能正常工作');
+                            } else {
+                                console.log('❌ 策略参数配置功能没有响应');
+                                console.log('参数区域内容:', paramsDiv.innerHTML);
+                            }
+                        }, 1000);
+                    } else {
+                        console.log('❌ 找不到策略选择器或参数区域');
+                    }
+                } catch (e) {
+                    console.log('跨域限制，无法直接测试:', e.message);
+                }
+            }, 3000);
+        }, 1000);
+    </script>
+</body>
+</html>
