@@ -791,15 +791,42 @@
                 'al2405': '沪铝'
             };
             
+            // 获取策略参数
+            let paramsText = '';
+            switch (strategy) {
+                case 'ma_cross':
+                    const fastMa = document.getElementById('fast_ma')?.value || 5;
+                    const slowMa = document.getElementById('slow_ma')?.value || 20;
+                    paramsText = `快线:${fastMa} 慢线:${slowMa}`;
+                    break;
+                case 'bollinger':
+                    const bbPeriod = document.getElementById('bb_period')?.value || 20;
+                    const bbStd = document.getElementById('bb_std')?.value || 2;
+                    paramsText = `周期:${bbPeriod} 标准差:${bbStd}`;
+                    break;
+                case 'rsi':
+                    const rsiPeriod = document.getElementById('rsi_period')?.value || 14;
+                    const overbought = document.getElementById('rsi_overbought')?.value || 70;
+                    const oversold = document.getElementById('rsi_oversold')?.value || 30;
+                    paramsText = `周期:${rsiPeriod} 超买:${overbought} 超卖:${oversold}`;
+                    break;
+                default:
+                    paramsText = '默认参数';
+            }
+            
             const taskHtml = `
                 <div class="task-item" data-task-id="${taskId}">
                     <div class="task-info">
                         <h4>${strategyNames[strategy]} - ${symbolNames[symbol]}</h4>
-                        <p>运行时间: 刚刚启动</p>
+                        <p>${paramsText} | 运行时间: 刚刚启动</p>
                     </div>
                     <div class="task-status">
                         <span class="status-indicator status-running"></span>
                         <span style="font-size: 12px; color: #48bb78;">运行中</span>
+                        <div class="task-controls">
+                            <button class="task-btn task-btn-pause" onclick="pauseTask('${taskId}')">暂停</button>
+                            <button class="task-btn task-btn-delete" onclick="deleteTask('${taskId}')">删除</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -808,7 +835,14 @@
             
             // 绑定点击事件
             const newTask = tasksList.querySelector(`[data-task-id="${taskId}"]`);
-            newTask.addEventListener('click', () => selectTask(taskId));
+            newTask.addEventListener('click', (e) => {
+                // 如果点击的是控制按钮，不触发任务选择
+                if (e.target.classList.contains('task-btn')) {
+                    e.stopPropagation();
+                    return;
+                }
+                selectTask(taskId);
+            });
             
             // 重置表单
             strategySelect.value = '';
@@ -1268,6 +1302,12 @@
         
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', () => {
+            // 初始化策略参数配置区域
+            const paramsDiv = document.getElementById('strategy-params');
+            if (paramsDiv) {
+                paramsDiv.innerHTML = '<p style="color: #718096; font-size: 13px; text-align: center; padding: 20px;">请先选择策略类型...</p>';
+            }
+            
             // 默认选择第一个任务显示图表
             setTimeout(() => {
                 const firstTask = document.querySelector('.task-item[data-task-id]');
