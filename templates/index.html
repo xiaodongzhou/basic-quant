@@ -50,50 +50,27 @@
         }
         
         .tab-btn {
-            flex: 1;
-            padding: 15px 20px;
+            padding: 15px 30px;
             background: none;
             border: none;
-            cursor: pointer;
+            color: #64748b;
             font-size: 16px;
             font-weight: 500;
-            color: #718096;
+            cursor: pointer;
+            transition: all 0.2s;
             border-bottom: 3px solid transparent;
-            transition: all 0.2s ease;
             position: relative;
         }
         
         .tab-btn:hover {
-            color: #5a67d8;
-            background: #f7fafc;
+            background: #f8fafc;
+            color: #475569;
         }
         
         .tab-btn.active {
             color: #5a67d8;
             border-bottom-color: #5a67d8;
             background: #f7fafc;
-        }
-        
-        .tab-btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 20px;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            transform: translateY(-50%);
-            transition: background 0.2s ease;
-        }
-        
-        .tab-btn[data-tab="live"]::before { 
-            background: #48bb78; 
-        }
-        .tab-btn[data-tab="backtest"]::before { 
-            background: #ed8936; 
-        }
-        .tab-btn[data-tab="management"]::before { 
-            background: #9f7aea; 
         }
         
         /* 主内容区域 */
@@ -105,20 +82,18 @@
         .tab-content {
             display: none;
             height: 100%;
-            overflow-y: auto;
             padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+            overflow-y: auto;
         }
         
         .tab-content.active {
             display: block;
         }
         
-        /* ========== 实盘运行区域布局 ========== */
+        /* 实盘运行布局 */
         .live-layout {
             display: grid;
-            grid-template-columns: 300px 1fr;
+            grid-template-columns: 350px 1fr;
             gap: 20px;
             height: 100%;
         }
@@ -143,8 +118,6 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            max-height: 300px;
-            overflow-y: auto;
         }
         
         .chart-container {
@@ -152,39 +125,7 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            height: 100%;
             min-height: 400px;
-        }
-        
-        /* ========== 回测区域布局 ========== */
-        .backtest-layout {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 20px;
-            height: 100%;
-        }
-        
-        .backtest-config {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            height: fit-content;
-        }
-        
-        .backtest-results {
-            display: grid;
-            grid-template-rows: auto 1fr;
-            gap: 20px;
-            height: 100%;
-        }
-        
-        /* ========== 用户管理区域布局 ========== */
-        .management-layout {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            height: fit-content;
         }
         
         /* 通用组件样式 */
@@ -210,68 +151,7 @@
             gap: 8px;
         }
         
-        /* 账户管理样式 */
-        .account-info {
-            margin-bottom: 20px;
-        }
-        
-        .account-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        
-        .account-item:last-child {
-            border-bottom: none;
-        }
-        
-        .account-item label {
-            font-weight: 600;
-            color: #4a5568;
-            min-width: 100px;
-        }
-        
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .status-badge.active {
-            background: #c6f6d5;
-            color: #22543d;
-        }
-        
-        .account-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .btn-small {
-            padding: 4px 8px;
-            border: none;
-            border-radius: 6px;
-            background: #e2e8f0;
-            color: #4a5568;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn-small:hover {
-            background: #cbd5e0;
-            transform: translateY(-1px);
-        }
-        
         /* 策略选择组件 */
-        .strategy-selector {
-            margin-bottom: 20px;
-        }
-        
         .form-group {
             margin-bottom: 15px;
         }
@@ -283,86 +163,84 @@
             color: #4a5568;
         }
         
-        .form-group select,
-        .form-group input {
+        .form-group select {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid #e2e8f0;
+            border: 2px solid #e2e8f0;
             border-radius: 6px;
             font-size: 14px;
+            background: white;
+            color: #2d3748;
             transition: border-color 0.2s;
         }
         
-        .form-group select:focus,
-        .form-group input:focus {
+        .form-group select:focus {
             outline: none;
             border-color: #5a67d8;
-            box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.1);
         }
         
         .btn {
-            background: #5a67d8;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 10px 20px;
             border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         
-        .btn:hover { 
-            background: #4c51bf; 
-        }
-        
-        .btn-success {
-            background: #48bb78;
-        }
-        
-        .btn-success:hover {
-            background: #38a169;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
         
-        /* 运行任务列表 */
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+        
+        /* 任务项样式 */
         .task-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
             border-radius: 8px;
+            margin-bottom: 10px;
             cursor: pointer;
             transition: all 0.2s;
+            background: white;
         }
         
         .task-item:hover {
-            border-color: #5a67d8;
-            background: #f7fafc;
+            border-color: #cbd5e0;
+            transform: translateY(-1px);
         }
         
         .task-item.selected {
             border-color: #5a67d8;
-            background: #edf2f7;
-            box-shadow: 0 2px 4px rgba(90, 103, 216, 0.1);
+            background: #f7fafc;
         }
         
         .task-info h4 {
-            margin: 0 0 4px 0;
             color: #2d3748;
-            font-size: 14px;
+            margin-bottom: 5px;
         }
         
         .task-info p {
-            margin: 0;
-            font-size: 12px;
             color: #718096;
+            font-size: 12px;
         }
         
         .task-status {
@@ -374,8 +252,7 @@
         /* 任务控制按钮 */
         .task-controls {
             display: flex;
-            align-items: center;
-            gap: 8px;
+            gap: 5px;
             margin-left: 10px;
         }
         
@@ -392,185 +269,105 @@
             transform: translateY(-1px);
         }
         
-        .pause-btn {
+        .task-btn-pause {
             background: #ed8936;
             color: white;
         }
         
-        .pause-btn:hover {
-            background: #dd7324;
-        }
-        
-        .resume-btn {
+        .task-btn-resume {
             background: #48bb78;
             color: white;
         }
         
-        .resume-btn:hover {
-            background: #38a169;
-        }
-        
-        .delete-btn {
-            background: #f56565;
+        .task-btn-delete {
+            background: #e53e3e;
             color: white;
         }
         
-        .delete-btn:hover {
-            background: #e53e3e;
-        }
-        
         .status-indicator {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
+            background: #48bb78;
         }
         
-        .status-running { background: #48bb78; }
-        .status-paused { background: #ed8936; }
-        .status-error { background: #f56565; }
+        .status-indicator.status-running {
+            background: #48bb78;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.status-paused {
+            background: #ed8936;
+        }
+        
+        .status-indicator.status-error {
+            background: #f56565;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
         
         /* 连接状态 */
         #connection-status {
             position: fixed;
             top: 10px;
             right: 10px;
-            padding: 8px 15px;
-            border-radius: 20px;
-            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
             font-size: 12px;
+            font-weight: 600;
             z-index: 1000;
+            transition: all 0.3s;
         }
         
-        .connected { background: #38a169; }
-        .disconnected { background: #e53e3e; }
-        
-        /* 响应式设计 */
-        @media (max-width: 1024px) {
-            .live-layout,
-            .backtest-layout {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto auto;
-            }
-            
-            .nav-tabs {
-                flex-direction: column;
-            }
-            
-            .tab-btn {
-                text-align: left;
-            }
-        }
-        
-        /* 其他原有样式保持不变 */
-        .metric { 
-            display: flex; 
-            justify-content: space-between; 
-            margin: 10px 0;
-            padding: 8px 0;
-            border-bottom: 1px solid #f7fafc;
-        }
-        .metric-value { font-weight: 600; }
-        .positive { color: #38a169; }
-        .negative { color: #e53e3e; }
-        .loading { text-align: center; color: #718096; }
-        
-        /* 持仓和交易相关样式保持不变 */
-        .position-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            background: #f8f9fa;
-        }
-        .position-info {
-            flex: 1;
-        }
-        .position-pnl {
-            text-align: right;
-            font-weight: 600;
-        }
-        .direction-long {
-            color: #e53e3e;
-            background: #fed7d7;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-        }
-        .direction-short {
-            color: #38a169;
+        .connected {
             background: #c6f6d5;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
+            color: #22543d;
         }
-        .trade-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 10px;
-            margin: 2px 0;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 13px;
+        
+        .disconnected {
+            background: #fed7d7;
+            color: #742a2a;
         }
-        .trade-item:last-child {
-            border-bottom: none;
+        
+        /* 回测布局 */
+        .backtest-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: 100%;
         }
-        .trade-info {
-            flex: 1;
+        
+        .backtest-config {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: fit-content;
         }
-        .trade-pnl {
-            text-align: right;
-            font-weight: 600;
-            font-size: 12px;
+        
+        .backtest-results {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
         }
-        .action-open {
-            color: #5a67d8;
-            font-weight: 600;
+        
+        /* 用户管理布局 */
+        .management-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            height: fit-content;
         }
-        .action-close {
-            color: #ed8936;
-            font-weight: 600;
-        }
-        .new-trade {
-            animation: highlight 2s ease-in-out;
-        }
-        @keyframes highlight {
-            0% { background: #fef5e7; }
-            100% { background: transparent; }
-        }
-        .summary-box {
-            background: #edf2f7;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 15px;
+        
+        .loading {
             text-align: center;
-        }
-        .summary-item {
-            display: inline-block;
-            margin: 0 10px;
-            font-size: 14px;
-        }
-        .summary-label {
             color: #718096;
-            font-size: 12px;
-            display: block;
-        }
-        .summary-value {
-            font-weight: 600;
-            color: #2d3748;
-        }
-        .pagination-controls button {
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-        .pagination-controls button:not(:disabled):hover {
-            background: #e2e8f0 !important;
-        }
-        .pagination-controls button:disabled {
-            opacity: 0.6;
+            padding: 40px;
+            font-size: 14px;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
@@ -623,10 +420,10 @@
                         <div class="form-group">
                             <label>选择品种:</label>
                             <select id="symbol-select">
-                                <option value="">请选择合约...</option>
-                                <option value="rb2405">螺纹钢 rb2405</option>
-                                <option value="cu2405">沪铜 cu2405</option>
-                                <option value="al2405">沪铝 al2405</option>
+                                <option value="">请选择品种...</option>
+                                <option value="rb2405">螺纹钢</option>
+                                <option value="cu2405">沪铜</option>
+                                <option value="al2405">沪铝</option>
                             </select>
                         </div>
                         
@@ -638,13 +435,6 @@
                             ➕ 添加到实盘
                         </button>
                     </div>
-                    
-                    <div class="card" style="margin-top: 20px; padding: 15px;">
-                        <h4 style="color: #718096; margin-bottom: 10px;">📊 系统状态</h4>
-                        <div id="system-status">
-                            <div class="loading">加载中...</div>
-                        </div>
-                    </div>
                 </aside>
                 
                 <!-- 主要内容区 -->
@@ -653,32 +443,32 @@
                     <div class="running-tasks">
                         <h3>🏃 运行中的任务</h3>
                         <div id="live-tasks-list">
-                            <div class="task-item" data-task-id="demo-1" data-status="running">
+                            <div class="task-item" data-task-id="demo-1">
                                 <div class="task-info">
                                     <h4>MA均线策略 - 螺纹钢</h4>
                                     <p>快线:5 慢线:20 | 运行时间: 2小时36分</p>
                                 </div>
                                 <div class="task-status">
                                     <span class="status-indicator status-running"></span>
-                                    <span class="status-text" style="font-size: 12px; color: #48bb78;">运行中</span>
+                                    <span style="font-size: 12px; color: #48bb78;">运行中</span>
                                     <div class="task-controls">
-                                        <button class="task-btn pause-btn" onclick="pauseTask('demo-1')">⏸ 暂停</button>
-                                        <button class="task-btn delete-btn" onclick="deleteTask('demo-1')">🗑 删除</button>
+                                        <button class="task-btn task-btn-pause" onclick="pauseTask('demo-1')">暂停</button>
+                                        <button class="task-btn task-btn-delete" onclick="deleteTask('demo-1')">删除</button>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="task-item" data-task-id="demo-2" data-status="paused">
+                            <div class="task-item" data-task-id="demo-2">
                                 <div class="task-info">
                                     <h4>布林带策略 - 沪铜</h4>
                                     <p>周期:20 标准差:2 | 运行时间: 45分钟</p>
                                 </div>
                                 <div class="task-status">
                                     <span class="status-indicator status-paused"></span>
-                                    <span class="status-text" style="font-size: 12px; color: #ed8936;">暂停</span>
+                                    <span style="font-size: 12px; color: #ed8936;">暂停</span>
                                     <div class="task-controls">
-                                        <button class="task-btn resume-btn" onclick="resumeTask('demo-2')">▶️ 恢复</button>
-                                        <button class="task-btn delete-btn" onclick="deleteTask('demo-2')">🗑 删除</button>
+                                        <button class="task-btn task-btn-resume" onclick="resumeTask('demo-2')">恢复</button>
+                                        <button class="task-btn task-btn-delete" onclick="deleteTask('demo-2')">删除</button>
                                     </div>
                                 </div>
                             </div>
@@ -713,74 +503,9 @@
                         </select>
                     </div>
                     
-                    <div class="form-group">
-                        <label>选择品种:</label>
-                        <select id="backtest-symbol">
-                            <option value="rb2405">螺纹钢 rb2405</option>
-                            <option value="cu2405">沪铜 cu2405</option>
-                            <option value="al2405">沪铝 al2405</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>开始日期:</label>
-                        <input type="date" id="start-date" value="2024-01-01">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>结束日期:</label>
-                        <input type="date" id="end-date" value="2024-03-31">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>初始资金:</label>
-                        <input type="number" id="initial-capital" value="1000000">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>快均线周期:</label>
-                        <input type="number" id="fast-period" value="5">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>慢均线周期:</label>
-                        <input type="number" id="slow-period" value="20">
-                    </div>
-                    
-                    <button class="btn" onclick="runBacktest()" style="width: 100%; margin-bottom: 20px;">
+                    <button class="btn" onclick="loadBacktestChart()">
                         🚀 运行回测
                     </button>
-                    
-                    <!-- ML参数优化接口预留 -->
-                    <div style="border-top: 2px solid #e2e8f0; padding-top: 20px;">
-                        <h4 style="color: #9f7aea; margin-bottom: 15px;">🤖 机器学习优化 (预留)</h4>
-                        
-                        <div class="form-group">
-                            <label>优化目标:</label>
-                            <select disabled>
-                                <option>最大夏普比率</option>
-                                <option>最大收益率</option>
-                                <option>最小回撤</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>优化算法:</label>
-                            <select disabled>
-                                <option>遗传算法 (GA)</option>
-                                <option>粒子群优化 (PSO)</option>
-                                <option>贝叶斯优化 (BO)</option>
-                            </select>
-                        </div>
-                        
-                        <button class="btn" disabled style="width: 100%; opacity: 0.5;">
-                            ⚡ AI参数优化 (开发中)
-                        </button>
-                        
-                        <p style="font-size: 12px; color: #718096; margin-top: 10px; text-align: center;">
-                            🚧 机器学习模块正在开发中，敬请期待
-                        </p>
-                    </div>
                 </aside>
                 
                 <!-- 回测结果区域 -->
@@ -803,26 +528,6 @@
                         <div style="position: relative; height: 500px; overflow: hidden;">
                             <canvas id="backtestChart" style="display: block; max-width: 100%; max-height: 100%;"></canvas>
                         </div>
-                        <div id="backtest-metrics" style="margin-top: 15px; padding: 10px; background: #f7fafc; border-radius: 6px; display: none;">
-                            <div style="display: flex; justify-content: space-around; text-align: center;">
-                                <div>
-                                    <span style="display: block; font-size: 12px; color: #718096;">总收益率</span>
-                                    <span id="total-return" style="font-weight: 600; color: #2d3748;">-</span>
-                                </div>
-                                <div>
-                                    <span style="display: block; font-size: 12px; color: #718096;">最大回撤</span>
-                                    <span id="max-drawdown" style="font-weight: 600; color: #2d3748;">-</span>
-                                </div>
-                                <div>
-                                    <span style="display: block; font-size: 12px; color: #718096;">交易次数</span>
-                                    <span id="total-trades" style="font-weight: 600; color: #2d3748;">-</span>
-                                </div>
-                                <div>
-                                    <span style="display: block; font-size: 12px; color: #718096;">胜率</span>
-                                    <span id="win-rate" style="font-weight: 600; color: #2d3748;">-</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -831,40 +536,6 @@
         <!-- ========== 用户管理区域 ========== -->
         <section id="management" class="tab-content">
             <div class="management-layout">
-                <!-- 账户管理 -->
-                <div class="card">
-                    <h3>👤 账户管理</h3>
-                    <div id="account-management">
-                        <div class="account-info">
-                            <div class="account-item">
-                                <label>账户名称:</label>
-                                <span id="account-name">Demo交易账户</span>
-                                <button class="btn-small" onclick="editAccountName()">✏️ 编辑</button>
-                            </div>
-                            <div class="account-item">
-                                <label>账户余额:</label>
-                                <span id="account-balance" style="color: #48bb78; font-weight: 600;">¥1,000,000.00</span>
-                            </div>
-                            <div class="account-item">
-                                <label>可用资金:</label>
-                                <span id="available-balance" style="color: #4299e1; font-weight: 600;">¥850,000.00</span>
-                            </div>
-                            <div class="account-item">
-                                <label>冻结资金:</label>
-                                <span id="frozen-balance" style="color: #ed8936; font-weight: 600;">¥150,000.00</span>
-                            </div>
-                            <div class="account-item">
-                                <label>账户状态:</label>
-                                <span class="status-badge active">🟢 正常</span>
-                            </div>
-                        </div>
-                        <div class="account-actions">
-                            <button class="btn" onclick="refreshAccountInfo()">🔄 刷新账户信息</button>
-                            <button class="btn" onclick="exportAccountData()">📊 导出账户数据</button>
-                        </div>
-                    </div>
-                </div>
-                
                 <!-- 投资组合配置 -->
                 <div class="card">
                     <h3>⚖️ 投资组合配置</h3>
@@ -932,95 +603,31 @@
         const symbolSelect = document.getElementById('symbol-select');
         const addTaskBtn = document.getElementById('add-task-btn');
         
-        // 策略参数配置模板
-        const strategyParams = {
-            'ma_cross': [
-                { name: 'fast_period', label: '快均线周期', type: 'number', default: 5, min: 1, max: 50 },
-                { name: 'slow_period', label: '慢均线周期', type: 'number', default: 20, min: 5, max: 200 }
-            ],
-            'bollinger': [
-                { name: 'period', label: '周期', type: 'number', default: 20, min: 5, max: 100 },
-                { name: 'std_dev', label: '标准差倍数', type: 'number', default: 2, min: 1, max: 5, step: 0.1 }
-            ],
-            'rsi': [
-                { name: 'period', label: 'RSI周期', type: 'number', default: 14, min: 5, max: 50 },
-                { name: 'upper_threshold', label: '超买阈值', type: 'number', default: 70, min: 50, max: 90 },
-                { name: 'lower_threshold', label: '超卖阈值', type: 'number', default: 30, min: 10, max: 50 }
-            ]
-        };
-        
-        // 策略选择事件
-        strategySelect.addEventListener('change', function() {
-            updateStrategyParams();
-            checkFormComplete();
-        });
-        
-        symbolSelect.addEventListener('change', function() {
-            checkFormComplete();
-        });
-        
-        // 更新策略参数配置
-        function updateStrategyParams() {
-            const strategy = strategySelect.value;
-            const paramsContainer = document.getElementById('strategy-params');
-            
-            if (!strategy) {
-                paramsContainer.innerHTML = '';
-                return;
-            }
-            
-            const params = strategyParams[strategy];
-            let html = '<h4 style="color: #5a67d8; margin: 15px 0 10px 0;">参数配置:</h4>';
-            
-            params.forEach(param => {
-                html += `
-                    <div class="form-group">
-                        <label>${param.label}:</label>
-                        <input type="${param.type}" 
-                               id="param-${param.name}" 
-                               value="${param.default}"
-                               min="${param.min || ''}"
-                               max="${param.max || ''}"
-                               step="${param.step || ''}"
-                               onchange="checkFormComplete()">
-                    </div>
-                `;
-            });
-            
-            paramsContainer.innerHTML = html;
-        }
-        
-        // 检查表单完整性
+        // 检查表单完成状态
         function checkFormComplete() {
-            const strategy = strategySelect.value;
-            const symbol = symbolSelect.value;
-            addTaskBtn.disabled = !strategy || !symbol;
+            if (strategySelect.value && symbolSelect.value) {
+                addTaskBtn.disabled = false;
+            } else {
+                addTaskBtn.disabled = true;
+            }
         }
         
-        // 添加到实盘
-        addTaskBtn.addEventListener('click', function() {
+        strategySelect.addEventListener('change', checkFormComplete);
+        symbolSelect.addEventListener('change', checkFormComplete);
+        
+        // 添加任务按钮点击事件
+        addTaskBtn.addEventListener('click', () => {
             const strategy = strategySelect.value;
             const symbol = symbolSelect.value;
             
             if (!strategy || !symbol) return;
             
-            // 收集参数
-            const params = {};
-            if (strategyParams[strategy]) {
-                strategyParams[strategy].forEach(param => {
-                    const input = document.getElementById(`param-${param.name}`);
-                    if (input) {
-                        params[param.name] = input.type === 'number' ? parseFloat(input.value) : input.value;
-                    }
-                });
-            }
-            
             // 创建新任务
-            addLiveTask(strategy, symbol, params);
+            addLiveTask(strategy, symbol);
         });
         
         // 添加实盘任务
-        function addLiveTask(strategy, symbol, params) {
+        function addLiveTask(strategy, symbol) {
             const tasksList = document.getElementById('live-tasks-list');
             const taskId = `task-${Date.now()}`;
             
@@ -1036,21 +643,15 @@
                 'al2405': '沪铝'
             };
             
-            const paramsText = Object.entries(params).map(([key, value]) => `${key}:${value}`).join(' ');
-            
             const taskHtml = `
-                <div class="task-item" data-task-id="${taskId}" data-status="running">
+                <div class="task-item" data-task-id="${taskId}">
                     <div class="task-info">
                         <h4>${strategyNames[strategy]} - ${symbolNames[symbol]}</h4>
-                        <p>${paramsText} | 运行时间: 刚刚启动</p>
+                        <p>运行时间: 刚刚启动</p>
                     </div>
                     <div class="task-status">
                         <span class="status-indicator status-running"></span>
-                        <span class="status-text" style="font-size: 12px; color: #48bb78;">运行中</span>
-                        <div class="task-controls">
-                            <button class="task-btn pause-btn" onclick="pauseTask('${taskId}')">⏸ 暂停</button>
-                            <button class="task-btn delete-btn" onclick="deleteTask('${taskId}')">🗑 删除</button>
-                        </div>
+                        <span style="font-size: 12px; color: #48bb78;">运行中</span>
                     </div>
                 </div>
             `;
@@ -1064,7 +665,6 @@
             // 重置表单
             strategySelect.value = '';
             symbolSelect.value = '';
-            document.getElementById('strategy-params').innerHTML = '';
             checkFormComplete();
             
             alert(`✅ 成功添加 ${strategyNames[strategy]} 到实盘运行！`);
@@ -1073,9 +673,14 @@
         // ========== 任务选择和图表显示 ==========
         let selectedTaskId = null;
         
-        // 绑定现有任务的点击事件
+        // 绑定现有任务点击事件
         document.querySelectorAll('.task-item').forEach(item => {
-            item.addEventListener('click', () => {
+            item.addEventListener('click', (e) => {
+                // 如果点击的是控制按钮，不触发任务选择
+                if (e.target.classList.contains('task-btn')) {
+                    e.stopPropagation();
+                    return;
+                }
                 const taskId = item.dataset.taskId;
                 selectTask(taskId);
             });
@@ -1094,6 +699,78 @@
             loadLiveChart(taskId);
         }
         
+        // ========== 任务控制功能 ==========
+        function pauseTask(taskId) {
+            console.log('暂停任务:', taskId);
+            
+            // 更新任务状态显示
+            const taskItem = document.querySelector(`[data-task-id="${taskId}"]`);
+            const statusIndicator = taskItem.querySelector('.status-indicator');
+            const statusText = taskItem.querySelector('.task-status span:nth-child(2)');
+            const controlsDiv = taskItem.querySelector('.task-controls');
+            
+            // 更新状态
+            statusIndicator.className = 'status-indicator status-paused';
+            statusText.textContent = '暂停';
+            statusText.style.color = '#ed8936';
+            
+            // 更新按钮
+            controlsDiv.innerHTML = `
+                <button class="task-btn task-btn-resume" onclick="resumeTask('${taskId}')">恢复</button>
+                <button class="task-btn task-btn-delete" onclick="deleteTask('${taskId}')">删除</button>
+            `;
+            
+            // 这里可以添加实际的暂停逻辑，比如发送WebSocket消息
+            alert(`✅ 已暂停任务: ${taskId}`);
+        }
+        
+        function resumeTask(taskId) {
+            console.log('恢复任务:', taskId);
+            
+            // 更新任务状态显示
+            const taskItem = document.querySelector(`[data-task-id="${taskId}"]`);
+            const statusIndicator = taskItem.querySelector('.status-indicator');
+            const statusText = taskItem.querySelector('.task-status span:nth-child(2)');
+            const controlsDiv = taskItem.querySelector('.task-controls');
+            
+            // 更新状态
+            statusIndicator.className = 'status-indicator status-running';
+            statusText.textContent = '运行中';
+            statusText.style.color = '#48bb78';
+            
+            // 更新按钮
+            controlsDiv.innerHTML = `
+                <button class="task-btn task-btn-pause" onclick="pauseTask('${taskId}')">暂停</button>
+                <button class="task-btn task-btn-delete" onclick="deleteTask('${taskId}')">删除</button>
+            `;
+            
+            // 这里可以添加实际的恢复逻辑，比如发送WebSocket消息
+            alert(`✅ 已恢复任务: ${taskId}`);
+        }
+        
+        function deleteTask(taskId) {
+            if (confirm(`确定要删除任务 ${taskId} 吗？此操作不可撤销！`)) {
+                console.log('删除任务:', taskId);
+                
+                // 从DOM中移除任务项
+                const taskItem = document.querySelector(`[data-task-id="${taskId}"]`);
+                taskItem.remove();
+                
+                // 如果删除的是当前选中的任务，清空图表
+                if (selectedTaskId === taskId) {
+                    selectedTaskId = null;
+                    const placeholder = document.getElementById('live-chart-placeholder');
+                    const canvas = document.getElementById('liveChart');
+                    
+                    placeholder.style.display = 'flex';
+                    canvas.style.display = 'none';
+                }
+                
+                // 这里可以添加实际的删除逻辑，比如发送WebSocket消息
+                alert(`✅ 已删除任务: ${taskId}`);
+            }
+        }
+        
         function loadLiveChart(taskId) {
             const placeholder = document.getElementById('live-chart-placeholder');
             const canvas = document.getElementById('liveChart');
@@ -1106,693 +783,62 @@
             createDemoLiveChart();
         }
         
-        // ========== 任务控制功能 ==========
-        function pauseTask(taskId) {
-            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-            if (!taskElement) {
-                alert('❌ 任务不存在');
-                return;
-            }
-            
-            const currentStatus = taskElement.dataset.status;
-            if (currentStatus === 'paused') {
-                alert('⚠️ 任务已经处于暂停状态');
-                return;
-            }
-            
-            // 更新任务状态为暂停
-            taskElement.dataset.status = 'paused';
-            
-            // 更新状态显示
-            const statusIndicator = taskElement.querySelector('.status-indicator');
-            const statusText = taskElement.querySelector('.status-text');
-            const taskControls = taskElement.querySelector('.task-controls');
-            
-            statusIndicator.className = 'status-indicator status-paused';
-            statusText.textContent = '暂停';
-            statusText.style.color = '#ed8936';
-            
-            // 更新控制按钮
-            taskControls.innerHTML = `
-                <button class="task-btn resume-btn" onclick="resumeTask('${taskId}')">▶️ 恢复</button>
-                <button class="task-btn delete-btn" onclick="deleteTask('${taskId}')">🗑 删除</button>
-            `;
-            
-            // TODO: 发送暂停请求到后端
-            console.log(`暂停任务: ${taskId}`);
-            
-            alert('⏸️ 任务已暂停');
-        }
-        
-        function resumeTask(taskId) {
-            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-            if (!taskElement) {
-                alert('❌ 任务不存在');
-                return;
-            }
-            
-            const currentStatus = taskElement.dataset.status;
-            if (currentStatus === 'running') {
-                alert('⚠️ 任务已经在运行中');
-                return;
-            }
-            
-            // 更新任务状态为运行
-            taskElement.dataset.status = 'running';
-            
-            // 更新状态显示
-            const statusIndicator = taskElement.querySelector('.status-indicator');
-            const statusText = taskElement.querySelector('.status-text');
-            const taskControls = taskElement.querySelector('.task-controls');
-            
-            statusIndicator.className = 'status-indicator status-running';
-            statusText.textContent = '运行中';
-            statusText.style.color = '#48bb78';
-            
-            // 更新控制按钮
-            taskControls.innerHTML = `
-                <button class="task-btn pause-btn" onclick="pauseTask('${taskId}')">⏸ 暂停</button>
-                <button class="task-btn delete-btn" onclick="deleteTask('${taskId}')">🗑 删除</button>
-            `;
-            
-            // TODO: 发送恢复请求到后端
-            console.log(`恢复任务: ${taskId}`);
-            
-            alert('▶️ 任务已恢复运行');
-        }
-        
-        function deleteTask(taskId) {
-            if (!confirm('🗑️ 确定要删除此任务吗？删除后无法恢复。')) {
-                return;
-            }
-            
-            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-            if (!taskElement) {
-                alert('❌ 任务不存在');
-                return;
-            }
-            
-            // 如果是当前选中的任务，清除选择状态
-            if (selectedTaskId === taskId) {
-                selectedTaskId = null;
-                
-                // 隐藏图表，显示占位符
-                const placeholder = document.getElementById('live-chart-placeholder');
-                const canvas = document.getElementById('liveChart');
-                
-                placeholder.style.display = 'flex';
-                canvas.style.display = 'none';
-            }
-            
-            // 删除任务元素
-            taskElement.remove();
-            
-            // TODO: 发送删除请求到后端
-            console.log(`删除任务: ${taskId}`);
-            
-            alert('🗑️ 任务已删除');
-        }
-        
         function createDemoLiveChart() {
-            const canvas = document.getElementById('liveChart');
-            if (!canvas) {
-                console.error('实时图表canvas元素未找到');
-                return;
-            }
-            const ctx = canvas.getContext('2d');
+            const ctx = document.getElementById('liveChart').getContext('2d');
             
-            // 生成演示蜡烛图数据
-            const candlestickData = [];
-            let basePrice = 3500;
-            
-            for (let i = 0; i < 30; i++) {
-                const time = new Date(Date.now() - (30 - i) * 300000); // 5分钟间隔
-                
-                // 生成OHLC数据
-                const open = basePrice + (Math.random() * 20 - 10);
-                const volatility = 15 + Math.random() * 10;
-                const high = open + Math.random() * volatility;
-                const low = open - Math.random() * volatility;
-                const close = low + Math.random() * (high - low);
-                
-                candlestickData.push({
-                    x: time.getTime(),
-                    o: open,
-                    h: high,
-                    l: low,
-                    c: close
-                });
-                
-                basePrice = close + (Math.random() * 10 - 5); // 下一个开盘价略有变化
-            }
-            
-            // 创建兼容的蜡烛图数据（使用柱状图模拟）
-            const riseData = [];
-            const fallData = [];
+            // 生成演示数据
             const labels = [];
+            const priceData = [];
+            const basePrice = 3500;
             
-            candlestickData.forEach((candle, index) => {
-                const time = new Date(candle.x);
-                labels.push(time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }));
-                
-                if (candle.c >= candle.o) {
-                    // 上涨：红色
-                    riseData.push({
-                        x: index,
-                        y: [candle.l, candle.o, candle.c, candle.h]
-                    });
-                    fallData.push(null);
-                } else {
-                    // 下跌：绿色
-                    fallData.push({
-                        x: index,
-                        y: [candle.l, candle.c, candle.o, candle.h]
-                    });
-                    riseData.push(null);
-                }
-            });
-
+            for (let i = 0; i < 50; i++) {
+                const time = new Date(Date.now() - (50 - i) * 60000);
+                labels.push(time.toLocaleTimeString());
+                priceData.push(basePrice + Math.sin(i / 5) * 50 + Math.random() * 20);
+            }
+            
             new Chart(ctx, {
-                type: 'bar',
+                type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label: '上涨',
-                            data: riseData,
-                            backgroundColor: '#ff4757', // 红色表示上涨
-                            borderColor: '#ff4757',
-                            borderWidth: 1,
-                            barPercentage: 0.8,
-                            categoryPercentage: 0.9
-                        },
-                        {
-                            label: '下跌', 
-                            data: fallData,
-                            backgroundColor: '#2ed573', // 绿色表示下跌
-                            borderColor: '#2ed573',
-                            borderWidth: 1,
-                            barPercentage: 0.8,
-                            categoryPercentage: 0.9
-                        }
-                    ]
+                    datasets: [{
+                        label: '实时价格',
+                        data: priceData,
+                        borderColor: '#5a67d8',
+                        backgroundColor: 'rgba(90, 103, 216, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'minute',
-                                displayFormats: {
-                                    minute: 'HH:mm'
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: '时间'
-                            }
-                        },
                         y: {
                             beginAtZero: false,
                             title: {
                                 display: true,
-                                text: '价格 (元)'
-                            },
-                            // 自定义Y轴显示范围
-                            min: Math.min(...candlestickData.map(d => d.l)) - 10,
-                            max: Math.max(...candlestickData.map(d => d.h)) + 10
+                                text: '价格'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '时间'
+                            }
                         }
                     },
                     plugins: {
                         title: {
                             display: true,
-                            text: `📊 ${selectedTaskId ? selectedTaskId.toUpperCase() : '演示任务'} - 实时蜡烛图`
-                        },
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(context) {
-                                    return labels[context[0].dataIndex];
-                                },
-                                label: function(context) {
-                                    const dataIndex = context.dataIndex;
-                                    const candle = candlestickData[dataIndex];
-                                    
-                                    if (candle) {
-                                        const trend = candle.c >= candle.o ? '上涨 📈' : '下跌 📉';
-                                        const change = ((candle.c - candle.o) / candle.o * 100);
-                                        const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
-                                        
-                                        return [
-                                            `${trend} ${changeText}`,
-                                            `开盘: ${candle.o.toFixed(2)}`,
-                                            `最高: ${candle.h.toFixed(2)}`,
-                                            `最低: ${candle.l.toFixed(2)}`,
-                                            `收盘: ${candle.c.toFixed(2)}`
-                                        ];
-                                    }
-                                    
-                                    return context.dataset.label + ': ' + context.formattedValue;
-                                }
-                            }
+                            text: `📊 ${selectedTaskId ? selectedTaskId.toUpperCase() : '演示任务'} - 实时K线图表`
                         }
                     }
                 }
             });
         }
         
-        // ========== 原有功能保持不变 ==========
-        // 初始化Socket.IO连接
-        const socket = io();
-        const connectionStatus = document.getElementById('connection-status');
-        
-        // 连接状态管理
-        socket.on('connect', () => {
-            connectionStatus.textContent = '已连接';
-            connectionStatus.className = 'connected';
-            console.log('已连接到服务器');
-            socket.emit('subscribe_market_data');
-        });
-        
-        socket.on('disconnect', () => {
-            connectionStatus.textContent = '未连接';
-            connectionStatus.className = 'disconnected';
-        });
-        
-        // 初始化图表
-        const ctx = document.getElementById('priceChart').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: '螺纹钢价格',
-                    data: [],
-                    borderColor: '#5a67d8',
-                    tension: 0.1,
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: { beginAtZero: false }
-                }
-            }
-        });
-        
-        // 处理实时市场数据
-        socket.on('market_data', (data) => {
-            updateMarketData(data.data);
-            
-            // 更新图表
-            if (data.data.rb2405) {
-                const now = new Date().toLocaleTimeString();
-                chart.data.labels.push(now);
-                chart.data.datasets[0].data.push(data.data.rb2405.last_price);
-                
-                // 保持最后20个数据点
-                if (chart.data.labels.length > 20) {
-                    chart.data.labels.shift();
-                    chart.data.datasets[0].data.shift();
-                }
-                
-                chart.update('none');
-            }
-        });
-        
-        // 处理策略状态更新
-        socket.on('strategy_status', (data) => {
-            updateStrategyStatus(data.strategies);
-        });
-        
-        // 处理持仓更新
-        socket.on('positions_update', (data) => {
-            updatePositions(data.positions);
-        });
-        
-        // 处理新交易
-        socket.on('new_trade', (data) => {
-            addNewTrade(data.trade);
-        });
-        
-        // 更新市场数据显示
-        function updateMarketData(data) {
-            const container = document.getElementById('market-data');
-            let html = '';
-            
-            for (const [symbol, tick] of Object.entries(data)) {
-                const changeClass = tick.change >= 0 ? 'positive' : 'negative';
-                html += `
-                    <div class="metric">
-                        <span>${symbol}:</span>
-                        <span class="metric-value ${changeClass}">
-                            ${tick.last_price} (${tick.change >= 0 ? '+' : ''}${tick.change}%)
-                        </span>
-                    </div>
-                `;
-            }
-            
-            container.innerHTML = html;
-        }
-        
-        // 更新策略状态显示
-        function updateStrategyStatus(strategies) {
-            const container = document.getElementById('strategy-status');
-            let html = '';
-            
-            for (const [id, strategy] of Object.entries(strategies)) {
-                const statusClass = strategy.status === 'running' ? 'status-running' : 
-                                   strategy.status === 'paused' ? 'status-paused' : 'status-error';
-                const pnlClass = strategy.pnl >= 0 ? 'positive' : 'negative';
-                
-                html += `
-                    <div class="metric">
-                        <span>
-                            <span class="status-indicator ${statusClass}"></span>
-                            ${strategy.name}
-                        </span>
-                        <span class="metric-value ${pnlClass}">
-                            ${strategy.pnl.toFixed(0)}
-                        </span>
-                    </div>
-                `;
-            }
-            
-            container.innerHTML = html;
-        }
-        
-        // 运行回测
-        function runBacktest() {
-            const params = {
-                start_date: document.getElementById('start-date').value,
-                end_date: document.getElementById('end-date').value,
-                initial_capital: document.getElementById('initial-capital').value,
-                fast_period: document.getElementById('fast-period').value,
-                slow_period: document.getElementById('slow-period').value,
-                symbols: ['rb2405']
-            };
-            
-            document.getElementById('backtest-results').innerHTML = '<div class="loading">回测运行中...</div>';
-            
-            fetch('/api/backtest/run', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(params)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const results = data.results;
-                    document.getElementById('backtest-results').innerHTML = `
-                        <h4>回测结果:</h4>
-                        <div class="metric">
-                            <span>总收益率:</span>
-                            <span class="metric-value ${results.total_return >= 0 ? 'positive' : 'negative'}">
-                                ${(results.total_return * 100).toFixed(2)}%
-                            </span>
-                        </div>
-                        <div class="metric">
-                            <span>夏普比率:</span>
-                            <span class="metric-value">${results.sharpe_ratio.toFixed(3)}</span>
-                        </div>
-                        <div class="metric">
-                            <span>最大回撤:</span>
-                            <span class="metric-value negative">${(results.max_drawdown * 100).toFixed(2)}%</span>
-                        </div>
-                        <div class="metric">
-                            <span>交易次数:</span>
-                            <span class="metric-value">${results.total_trades}</span>
-                        </div>
-                    `;
-                } else {
-                    document.getElementById('backtest-results').innerHTML = 
-                        `<div style="color: #e53e3e;">回测失败: ${data.message}</div>`;
-                }
-            })
-            .catch(error => {
-                document.getElementById('backtest-results').innerHTML = 
-                    `<div style="color: #e53e3e;">请求失败: ${error}</div>`;
-            });
-        }
-        
-        // 加载初始数据
-        function loadInitialData() {
-            // 加载系统状态
-            fetch('/api/system/status')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('system-status').innerHTML = `
-                        <div class="metric">
-                            <span>总资金:</span>
-                            <span class="metric-value">${data.total_capital.toLocaleString()}</span>
-                        </div>
-                        <div class="metric">
-                            <span>已用资金:</span>
-                            <span class="metric-value">${data.used_capital.toLocaleString()}</span>
-                        </div>
-                        <div class="metric">
-                            <span>活跃策略:</span>
-                            <span class="metric-value">${data.active_strategies}/${data.total_strategies}</span>
-                        </div>
-                        <div class="metric">
-                            <span>今日交易:</span>
-                            <span class="metric-value">${data.daily_trades}</span>
-                        </div>
-                    `;
-                });
-            
-            // 加载投资组合配置
-            fetch('/api/portfolio/config')
-                .then(response => response.json())
-                .then(data => {
-                    let html = `
-                        <div class="metric">
-                            <span>组合名称:</span>
-                            <span class="metric-value">${data.portfolio_name}</span>
-                        </div>
-                        <div class="metric">
-                            <span>总资金:</span>
-                            <span class="metric-value">${data.total_capital.toLocaleString()}</span>
-                        </div>
-                    `;
-                    
-                    data.strategies.forEach(strategy => {
-                        html += `
-                            <div class="metric">
-                                <span>${strategy.name}:</span>
-                                <span class="metric-value">${(strategy.allocation * 100).toFixed(1)}%</span>
-                            </div>
-                        `;
-                    });
-                    
-                    document.getElementById('portfolio-config').innerHTML = html;
-                });
-        }
-        
-        // 更新持仓显示
-        function updatePositions(positionsData) {
-            const container = document.getElementById('positions-data');
-            let html = '';
-            
-            let totalMarketValue = 0;
-            let totalUnrealizedPnl = 0;
-            let positionCount = 0;
-            
-            // 显示当前时间
-            const currentTime = positionsData.current_datetime || new Date().toLocaleString('zh-CN');
-            html += `
-                <div style="text-align: center; margin-bottom: 15px; padding: 8px; background: #f7fafc; border-radius: 6px; font-size: 13px; color: #4a5568;">
-                    📅 当前时间：${currentTime}
-                </div>
-            `;
-            
-            const positions = positionsData.positions || positionsData;
-            
-            for (let i = 0; i < positions.length; i++) {
-                const pos = positions[i];
-                const directionClass = pos.direction === 'long' ? 'direction-long' : 'direction-short';
-                const pnlClass = pos.unrealized_pnl >= 0 ? 'positive' : 'negative';
-                const pnlRatio = ((pos.unrealized_pnl / (pos.avg_price * pos.quantity)) * 100);
-                
-                html += `
-                    <div class="position-item">
-                        <div class="position-info">
-                            <div>
-                                <strong>${pos.symbol}</strong>
-                                <span class="${directionClass}">${pos.direction.toUpperCase()}</span>
-                                <span style="margin-left: 8px; color: #718096;">x${pos.quantity}</span>
-                            </div>
-                            <div style="font-size: 12px; color: #718096; margin-top: 4px;">
-                                均价: ${pos.avg_price} | 现价: ${pos.current_price} | ${pos.strategy}
-                            </div>
-                        </div>
-                        <div class="position-pnl">
-                            <div class="${pnlClass}">${pos.unrealized_pnl.toFixed(0)}</div>
-                            <div style="font-size: 12px;" class="${pnlClass}">${pnlRatio >= 0 ? '+' : ''}${pnlRatio.toFixed(2)}%</div>
-                        </div>
-                    </div>
-                `;
-                
-                totalMarketValue += pos.market_value;
-                totalUnrealizedPnl += pos.unrealized_pnl;
-                positionCount++;
-            }
-            
-            // 添加汇总信息
-            const totalPnlClass = totalUnrealizedPnl >= 0 ? 'positive' : 'negative';
-            const summaryHtml = `
-                <div class="summary-box">
-                    <div class="summary-item">
-                        <span class="summary-label">持仓数量</span>
-                        <span class="summary-value">${positionCount}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">市值</span>
-                        <span class="summary-value">${totalMarketValue.toFixed(0)}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">浮动盈亏</span>
-                        <span class="summary-value ${totalPnlClass}">${totalUnrealizedPnl >= 0 ? '+' : ''}${totalUnrealizedPnl.toFixed(0)}</span>
-                    </div>
-                </div>
-            `;
-            
-            container.innerHTML = summaryHtml + html;
-        }
-        
-        // 全局分页状态
-        let currentTradesPage = 1;
-        const tradesPerPage = 10;
-        
-        // 更新交易记录
-        function updateTrades(trades, pagination = null) {
-            const container = document.getElementById('trades-data');
-            let html = '';
-            
-            // 添加分页信息和控件
-            if (pagination) {
-                html += `
-                    <div style="margin-bottom: 15px; padding: 8px; background: #f7fafc; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-                        <div style="color: #4a5568;">
-                            📋 成交记录 (第${pagination.current_page}页/共${pagination.total_pages}页，总计${pagination.total_trades}笔)
-                        </div>
-                        <div class="pagination-controls">
-                            <button onclick="loadTradesPage(${pagination.prev_page})" ${!pagination.has_prev ? 'disabled' : ''} 
-                                    style="margin-right: 5px; padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e0; background: ${!pagination.has_prev ? '#f7fafc' : '#ffffff'}; cursor: ${!pagination.has_prev ? 'not-allowed' : 'pointer'};">
-                                ← 上一页
-                            </button>
-                            <span style="margin: 0 10px; color: #718096;">${pagination.current_page} / ${pagination.total_pages}</span>
-                            <button onclick="loadTradesPage(${pagination.next_page})" ${!pagination.has_next ? 'disabled' : ''} 
-                                    style="margin-left: 5px; padding: 4px 8px; font-size: 12px; border: 1px solid #cbd5e0; background: ${!pagination.has_next ? '#f7fafc' : '#ffffff'}; cursor: ${!pagination.has_next ? 'not-allowed' : 'pointer'};">
-                                下一页 →
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            trades.forEach(trade => {
-                const actionClass = trade.action === 'open' ? 'action-open' : 'action-close';
-                const directionClass = trade.direction === 'long' ? 'direction-long' : 'direction-short';
-                const pnlHtml = trade.pnl !== null ? 
-                    `<div class="trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}">${trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(0)}</div>` : 
-                    '<div class="trade-pnl">-</div>';
-                
-                html += `
-                    <div class="trade-item">
-                        <div class="trade-info">
-                            <div>
-                                <span class="${actionClass}">${trade.action.toUpperCase()}</span>
-                                <span class="${directionClass}">${trade.direction.toUpperCase()}</span>
-                                <strong>${trade.symbol}</strong>
-                                <span style="margin-left: 8px;">x${trade.quantity}</span>
-                                <span style="color: #718096;">@${trade.price}</span>
-                            </div>
-                            <div style="font-size: 11px; color: #a0aec0;">
-                                📅 ${trade.datetime_str} | ${trade.strategy}
-                            </div>
-                        </div>
-                        ${pnlHtml}
-                    </div>
-                `;
-            });
-            
-            container.innerHTML = html;
-        }
-        
-        // 添加新交易（带动画效果）
-        function addNewTrade(trade) {
-            const container = document.getElementById('trades-data');
-            const actionClass = trade.action === 'open' ? 'action-open' : 'action-close';
-            const directionClass = trade.direction === 'long' ? 'direction-long' : 'direction-short';
-            const pnlHtml = trade.pnl !== null ? 
-                `<div class="trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}">${trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(0)}</div>` : 
-                '<div class="trade-pnl">-</div>';
-            
-            const newTradeHtml = `
-                <div class="trade-item new-trade">
-                    <div class="trade-info">
-                        <div>
-                            <span class="${actionClass}">${trade.action.toUpperCase()}</span>
-                            <span class="${directionClass}">${trade.direction.toUpperCase()}</span>
-                            <strong>${trade.symbol}</strong>
-                            <span style="margin-left: 8px;">x${trade.quantity}</span>
-                            <span style="color: #718096;">@${trade.price}</span>
-                        </div>
-                        <div style="font-size: 11px; color: #a0aec0;">
-                            ${new Date(trade.timestamp).toLocaleTimeString()} | ${trade.strategy}
-                        </div>
-                    </div>
-                    ${pnlHtml}
-                </div>
-            `;
-            
-            // 在顶部插入新交易
-            container.insertAdjacentHTML('afterbegin', newTradeHtml);
-            
-            // 限制显示数量
-            const tradeItems = container.querySelectorAll('.trade-item');
-            if (tradeItems.length > 20) {
-                tradeItems[tradeItems.length - 1].remove();
-            }
-        }
-        
-        // 加载指定页面的交易记录
-        function loadTradesPage(page = 1) {
-            if (!page) return; // 防止无效页码
-            
-            currentTradesPage = page;
-            fetch(`/api/trades?page=${page}&per_page=${tradesPerPage}`)
-                .then(response => response.json())
-                .then(data => {
-                    updateTrades(data.trades, data.pagination);
-                })
-                .catch(error => {
-                    console.error('Error loading trades:', error);
-                });
-        }
-        
-        // 加载持仓和交易数据
-        function loadPositionsAndTrades() {
-            // 加载持仓数据
-            fetch('/api/positions')
-                .then(response => response.json())
-                .then(data => {
-                    updatePositions(data);
-                });
-            
-            // 加载交易记录（第一页）
-            loadTradesPage(1);
-        }
-        
-        // 回测分析图表相关
-        let backtestChart = null;
-        
+        // ========== 回测功能 ==========
         function loadBacktestChart() {
             const statusElement = document.getElementById('backtest-chart-status');
             statusElement.textContent = '正在加载回测数据...';
@@ -1802,7 +848,6 @@
                 .then(response => response.json())
                 .then(data => {
                     createBacktestChart(data);
-                    updateBacktestMetrics(data.performance_metrics);
                     statusElement.textContent = '回测数据加载完成';
                     statusElement.style.color = '#48bb78';
                 })
@@ -1813,362 +858,84 @@
                 });
         }
         
+        let backtestChart = null;
+        
         function createBacktestChart(data) {
-            const canvas = document.getElementById('backtestChart');
-            if (!canvas) {
-                console.error('回测图表canvas元素未找到');
-                return;
-            }
-            const ctx = canvas.getContext('2d');
+            const ctx = document.getElementById('backtestChart').getContext('2d');
             
             // 销毁现有图表
             if (backtestChart) {
                 backtestChart.destroy();
             }
             
-            // 准备K线蜡烛图数据
-            const candlestickData = data.kline_data.map((item, index) => ({
-                x: index,
-                o: item.open,
-                h: item.high,
-                l: item.low,
-                c: item.close,
-                time: item.time
-            }));
-            
-            // 简化数据处理，使用索引而不是时间
+            // 简化数据处理
             const labels = data.kline_data.map((item, index) => {
-                // 每50个数据点显示一个标签
                 return index % 50 === 0 ? item.time.substring(5, 16) : '';
             });
             
-            // 创建价格到索引的映射
-            const timeToIndex = {};
-            data.kline_data.forEach((item, index) => {
-                timeToIndex[item.time] = index;
-            });
-            
-            // 准备交易信号数据（转换为索引位置）
-            const longEntries = data.trade_signals
-                .filter(signal => signal.type === 'open_long')
-                .map(signal => {
-                    const index = timeToIndex[signal.time];
-                    return index !== undefined ? { x: index, y: signal.price } : null;
-                })
-                .filter(item => item !== null);
-                
-            const longExits = data.trade_signals
-                .filter(signal => signal.type === 'close_long')
-                .map(signal => {
-                    const index = timeToIndex[signal.time];
-                    return index !== undefined ? { x: index, y: signal.price } : null;
-                })
-                .filter(item => item !== null);
-                
-            const shortEntries = data.trade_signals
-                .filter(signal => signal.type === 'open_short')
-                .map(signal => {
-                    const index = timeToIndex[signal.time];
-                    return index !== undefined ? { x: index, y: signal.price } : null;
-                })
-                .filter(item => item !== null);
-                
-            const shortExits = data.trade_signals
-                .filter(signal => signal.type === 'close_short')
-                .map(signal => {
-                    const index = timeToIndex[signal.time];
-                    return index !== undefined ? { x: index, y: signal.price } : null;
-                })
-                .filter(item => item !== null);
-            
-            // 准备收益曲线数据
-            const returnData = data.portfolio_values.map(item => item.return);
-            
-            // 使用收盘价线图替代蜡烛图以确保兼容性
-            const priceData = candlestickData.map(item => item.c);
+            const priceData = data.kline_data.map(item => item.close);
             
             backtestChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [
-                        // K线收盘价线图
-                        {
-                            label: 'K线收盘价',
-                            data: priceData,
-                            borderColor: '#4299e1',
-                            backgroundColor: 'rgba(66, 153, 225, 0.1)',
-                            fill: false,
-                            tension: 0.1,
-                            yAxisID: 'price',
-                            pointRadius: 0,
-                            borderWidth: 1.5
-                        },
-                        // 多头开仓
-                        {
-                            label: '🔺 买入开仓',
-                            data: longEntries,
-                            backgroundColor: '#48bb78',
-                            borderColor: '#48bb78',
-                            pointRadius: 8,
-                            pointStyle: 'triangle',
-                            showLine: false,
-                            yAxisID: 'price',
-                            type: 'scatter'
-                        },
-                        // 多头平仓
-                        {
-                            label: '⬜ 卖出平仓',
-                            data: longExits,
-                            backgroundColor: '#ed8936',
-                            borderColor: '#ed8936',
-                            pointRadius: 7,
-                            pointStyle: 'rect',
-                            showLine: false,
-                            yAxisID: 'price',
-                            type: 'scatter'
-                        },
-                        // 空头开仓
-                        {
-                            label: '🔻 卖出开仓',
-                            data: shortEntries,
-                            backgroundColor: '#f56565',
-                            borderColor: '#f56565',
-                            pointRadius: 8,
-                            pointStyle: 'triangle',
-                            rotation: 180,
-                            showLine: false,
-                            yAxisID: 'price',
-                            type: 'scatter'
-                        },
-                        // 空头平仓
-                        {
-                            label: '✖️ 买入平仓',
-                            data: shortExits,
-                            backgroundColor: '#9f7aea',
-                            borderColor: '#9f7aea',
-                            pointRadius: 8,
-                            pointStyle: 'crossRot',
-                            showLine: false,
-                            yAxisID: 'price',
-                            type: 'scatter'
-                        },
-                        // 收益曲线
-                        {
-                            label: '📈 收益曲线 (%)',
-                            data: returnData,
-                            borderColor: '#e53e3e',
-                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
-                            fill: false,
-                            tension: 0.1,
-                            yAxisID: 'return',
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            type: 'line'
-                        }
-                    ]
+                    datasets: [{
+                        label: 'K线收盘价',
+                        data: priceData,
+                        borderColor: '#4299e1',
+                        backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        borderWidth: 1.5
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
                     scales: {
-                        x: {
-                            display: true,
-                            title: {
-                                display: true,
-                                text: '时间 (2024年1月-3月)'
-                            },
-                            ticks: {
-                                maxTicksLimit: 10
-                            }
-                        },
-                        price: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
+                        y: {
+                            beginAtZero: false,
                             title: {
                                 display: true,
                                 text: '价格 (元/吨)'
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)',
-                            },
+                            }
                         },
-                        return: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
+                        x: {
                             title: {
                                 display: true,
-                                text: '收益率 (%)'
-                            },
-                            grid: {
-                                drawOnChartArea: false,
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toFixed(1) + '%';
-                                }
+                                text: '时间'
                             }
                         }
                     },
                     plugins: {
                         title: {
                             display: true,
-                            text: '📊 回测分析图表 - MA策略K线图与交易信号 (2024-01-01 至 2024-03-31)',
-                            font: {
-                                size: 16
-                            }
-                        },
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(context) {
-                                    const index = context[0].dataIndex;
-                                    return data.kline_data[index] ? data.kline_data[index].time : '';
-                                },
-                                label: function(context) {
-                                    // 处理K线价格数据
-                                    if (context.dataset.label === 'K线收盘价') {
-                                        const dataIndex = context.dataIndex;
-                                        const candle = candlestickData[dataIndex];
-                                        
-                                        if (candle) {
-                                            const trend = candle.c >= candle.o ? '上涨 📈' : '下跌 📉';
-                                            const change = ((candle.c - candle.o) / candle.o * 100);
-                                            const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
-                                            
-                                            return [
-                                                `${trend} ${changeText}`,
-                                                `开盘: ${candle.o.toFixed(2)}`,
-                                                `最高: ${candle.h.toFixed(2)}`,
-                                                `最低: ${candle.l.toFixed(2)}`,
-                                                `收盘: ${candle.c.toFixed(2)}`
-                                            ];
-                                        }
-                                        
-                                        return `收盘价: ${context.formattedValue}`;
-                                    }
-                                    
-                                    // 处理其他数据集
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.dataset.yAxisID === 'return') {
-                                        label += context.formattedValue + '%';
-                                    } else {
-                                        label += context.formattedValue;
-                                    }
-                                    return label;
-                                }
-                            }
+                            text: '📊 回测分析图表 - K线图与交易信号'
                         }
                     }
                 }
             });
         }
         
-        function updateBacktestMetrics(metrics) {
-            document.getElementById('total-return').textContent = `${metrics.total_return.toFixed(2)}%`;
-            document.getElementById('max-drawdown').textContent = `${metrics.max_drawdown.toFixed(2)}%`;
-            document.getElementById('total-trades').textContent = metrics.total_trades;
-            document.getElementById('win-rate').textContent = `${metrics.win_rate.toFixed(1)}%`;
-            
-            // 显示指标面板
-            document.getElementById('backtest-metrics').style.display = 'block';
-        }
+        // ========== WebSocket连接 ==========
+        const socket = io();
+        const connectionStatus = document.getElementById('connection-status');
         
-        // ========== 账户管理功能 ==========
-        function editAccountName() {
-            const currentName = document.getElementById('account-name').textContent;
-            const newName = prompt('请输入新的账户名称:', currentName);
-            
-            if (newName && newName.trim() !== '' && newName !== currentName) {
-                document.getElementById('account-name').textContent = newName.trim();
-                
-                // TODO: 发送更新请求到后端
-                console.log('更新账户名称:', newName.trim());
-                
-                alert('✅ 账户名称更新成功！');
-            }
-        }
+        // 连接状态管理
+        socket.on('connect', () => {
+            connectionStatus.textContent = '已连接';
+            connectionStatus.className = 'connected';
+            console.log('已连接到服务器');
+        });
         
-        function refreshAccountInfo() {
-            // 显示加载状态
-            const balanceElement = document.getElementById('account-balance');
-            const availableElement = document.getElementById('available-balance');
-            const frozenElement = document.getElementById('frozen-balance');
-            
-            balanceElement.textContent = '加载中...';
-            availableElement.textContent = '加载中...';
-            frozenElement.textContent = '加载中...';
-            
-            // 模拟刷新延迟
-            setTimeout(() => {
-                // 模拟随机数据变化
-                const baseBalance = 1000000;
-                const variation = (Math.random() - 0.5) * 100000;
-                const newBalance = baseBalance + variation;
-                const frozen = 120000 + (Math.random() - 0.5) * 60000;
-                const available = newBalance - frozen;
-                
-                balanceElement.textContent = `¥${newBalance.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
-                availableElement.textContent = `¥${available.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
-                frozenElement.textContent = `¥${frozen.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
-                
-                // TODO: 发送刷新请求到后端
-                console.log('刷新账户信息完成');
-                
-                alert('🔄 账户信息刷新完成！');
-            }, 1500);
-        }
-        
-        function exportAccountData() {
-            // 生成模拟导出数据
-            const accountData = {
-                accountName: document.getElementById('account-name').textContent,
-                balance: document.getElementById('account-balance').textContent,
-                available: document.getElementById('available-balance').textContent,
-                frozen: document.getElementById('frozen-balance').textContent,
-                exportTime: new Date().toLocaleString('zh-CN'),
-                positions: '当前持仓数据...',
-                trades: '交易记录数据...'
-            };
-            
-            // 创建并下载文件
-            const dataStr = JSON.stringify(accountData, null, 2);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            
-            const exportFileDefaultName = `账户数据_${new Date().toISOString().slice(0, 10)}.json`;
-            
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', exportFileDefaultName);
-            linkElement.click();
-            
-            // TODO: 发送导出请求到后端获取完整数据
-            console.log('导出账户数据:', accountData);
-            
-            alert('📊 账户数据导出完成！');
-        }
+        socket.on('disconnect', () => {
+            connectionStatus.textContent = '未连接';
+            connectionStatus.className = 'disconnected';
+        });
         
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', () => {
-            loadInitialData();
-            loadPositionsAndTrades();
-            
             // 默认选择第一个任务显示图表
             setTimeout(() => {
                 const firstTask = document.querySelector('.task-item[data-task-id]');
@@ -2177,21 +944,6 @@
                     selectTask(taskId);
                 }
             }, 500);
-            
-            // 定时刷新持仓数据和当前页交易数据
-            setInterval(() => {
-                // 总是刷新持仓数据
-                fetch('/api/positions')
-                    .then(response => response.json())
-                    .then(data => {
-                        updatePositions(data);
-                    });
-                
-                // 如果在第一页，自动刷新最新交易；否则保持用户当前查看的页面
-                if (currentTradesPage === 1) {
-                    loadTradesPage(1);
-                }
-            }, 5000);
         });
     </script>
 </body>
