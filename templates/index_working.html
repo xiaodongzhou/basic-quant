@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>期货量化交易系统 - Phase 2.5 UI/UX优化版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* 顶部导航栏 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* 主导航Tab */
+        .dashboard-nav {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .nav-tabs {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .tab-btn {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+            position: relative;
+        }
+        
+        .tab-btn:hover {
+            background: #f8fafc;
+            color: #475569;
+        }
+        
+        .tab-btn.active {
+            color: #5a67d8;
+            border-bottom-color: #5a67d8;
+            background: #f7fafc;
+        }
+        
+        /* 主内容区域 */
+        .dashboard-content {
+            height: calc(100vh - 140px);
+            overflow: hidden;
+        }
+        
+        .tab-content {
+            display: none;
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 实盘运行布局 */
+        .live-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+        
+        .strategy-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+        
+        .running-tasks {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+        
+        /* 通用组件样式 */
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover { 
+            transform: translateY(-2px); 
+        }
+        
+        .card h3 {
+            color: #5a67d8;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 策略选择组件 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            color: #2d3748;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group select:focus {
+            outline: none;
+            border-color: #5a67d8;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+        
+        /* 任务项样式 */
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+        
+        .task-item:hover {
+            border-color: #cbd5e0;
+            transform: translateY(-1px);
+        }
+        
+        .task-item.selected {
+            border-color: #5a67d8;
+            background: #f7fafc;
+        }
+        
+        .task-info h4 {
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+        
+        .task-info p {
+            color: #718096;
+            font-size: 12px;
+        }
+        
+        .task-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #48bb78;
+        }
+        
+        .status-indicator.status-running {
+            background: #48bb78;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.status-paused {
+            background: #ed8936;
+        }
+        
+        .status-indicator.status-error {
+            background: #f56565;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* 连接状态 */
+        #connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        
+        .connected {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .disconnected {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        /* 回测布局 */
+        .backtest-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+        
+        .backtest-config {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .backtest-results {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+        }
+        
+        /* 用户管理布局 */
+        .management-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            height: fit-content;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #718096;
+            padding: 40px;
+            font-size: 14px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="connection-status" class="disconnected">未连接</div>
+    
+    <!-- 顶部标题栏 -->
+    <div class="header">
+        <h1>🎯 期货量化交易系统</h1>
+        <p>Phase 2.5 UI/UX优化版 - 三区域布局 | 实盘交易 | 回测分析 | 用户管理</p>
+    </div>
+    
+    <!-- 主导航Tab -->
+    <nav class="dashboard-nav">
+        <div class="nav-tabs">
+            <button class="tab-btn active" data-tab="live">
+                📊 实盘运行
+            </button>
+            <button class="tab-btn" data-tab="backtest">
+                🔬 回测分析
+            </button>
+            <button class="tab-btn" data-tab="management">
+                ⚙️ 用户管理
+            </button>
+        </div>
+    </nav>
+    
+    <!-- 主内容区域 -->
+    <main class="dashboard-content">
+        <!-- ========== 实盘运行区域 ========== -->
+        <section id="live-trading" class="tab-content active">
+            <div class="live-layout">
+                <!-- 策略配置面板 -->
+                <aside class="strategy-panel">
+                    <h3>🎯 策略配置</h3>
+                    
+                    <div class="strategy-selector">
+                        <div class="form-group">
+                            <label>选择策略:</label>
+                            <select id="strategy-select">
+                                <option value="">请选择策略...</option>
+                                <option value="ma_cross">MA均线策略</option>
+                                <option value="bollinger">布林带策略</option>
+                                <option value="rsi">RSI策略</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>选择品种:</label>
+                            <select id="symbol-select">
+                                <option value="">请选择品种...</option>
+                                <option value="rb2405">螺纹钢</option>
+                                <option value="cu2405">沪铜</option>
+                                <option value="al2405">沪铝</option>
+                            </select>
+                        </div>
+                        
+                        <div id="strategy-params">
+                            <!-- 动态参数配置区域 -->
+                        </div>
+                        
+                        <button class="btn btn-success" id="add-task-btn" disabled>
+                            ➕ 添加到实盘
+                        </button>
+                    </div>
+                </aside>
+                
+                <!-- 主要内容区 -->
+                <div class="main-content">
+                    <!-- 运行任务列表 -->
+                    <div class="running-tasks">
+                        <h3>🏃 运行中的任务</h3>
+                        <div id="live-tasks-list">
+                            <div class="task-item" data-task-id="demo-1">
+                                <div class="task-info">
+                                    <h4>MA均线策略 - 螺纹钢</h4>
+                                    <p>快线:5 慢线:20 | 运行时间: 2小时36分</p>
+                                </div>
+                                <div class="task-status">
+                                    <span class="status-indicator status-running"></span>
+                                    <span style="font-size: 12px; color: #48bb78;">运行中</span>
+                                </div>
+                            </div>
+                            
+                            <div class="task-item" data-task-id="demo-2">
+                                <div class="task-info">
+                                    <h4>布林带策略 - 沪铜</h4>
+                                    <p>周期:20 标准差:2 | 运行时间: 45分钟</p>
+                                </div>
+                                <div class="task-status">
+                                    <span class="status-indicator status-paused"></span>
+                                    <span style="font-size: 12px; color: #ed8936;">暂停</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- K线图表区域 -->
+                    <div class="chart-container">
+                        <h3>📈 实时K线图表</h3>
+                        <div id="live-chart-placeholder" style="height: 400px; display: flex; align-items: center; justify-content: center; color: #718096;">
+                            请选择左侧运行任务查看对应的K线图表和交易信号
+                        </div>
+                        <canvas id="liveChart" style="display: none; max-height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ========== 回测分析区域 ========== -->
+        <section id="backtest" class="tab-content">
+            <div class="backtest-layout">
+                <!-- 回测配置面板 -->
+                <aside class="backtest-config">
+                    <h3>🔬 回测配置</h3>
+                    
+                    <div class="form-group">
+                        <label>选择策略:</label>
+                        <select id="backtest-strategy">
+                            <option value="ma_cross">MA均线策略</option>
+                            <option value="bollinger">布林带策略</option>
+                            <option value="rsi">RSI策略</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn" onclick="loadBacktestChart()">
+                        🚀 运行回测
+                    </button>
+                </aside>
+                
+                <!-- 回测结果区域 -->
+                <div class="backtest-results">
+                    <!-- 回测结果摘要 -->
+                    <div class="card">
+                        <h3>📊 回测结果</h3>
+                        <div id="backtest-results">
+                            <div class="loading">请配置参数并运行回测...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 回测分析图表 -->
+                    <div class="card" style="flex: 1;">
+                        <h3>📈 回测分析图表</h3>
+                        <div style="margin-bottom: 15px;">
+                            <button class="btn" onclick="loadBacktestChart()" style="margin-right: 10px;">📊 加载回测图表</button>
+                            <span id="backtest-chart-status" style="color: #718096; font-size: 14px;">点击按钮加载回测分析图表</span>
+                        </div>
+                        <div style="position: relative; height: 500px; overflow: hidden;">
+                            <canvas id="backtestChart" style="display: block; max-width: 100%; max-height: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ========== 用户管理区域 ========== -->
+        <section id="management" class="tab-content">
+            <div class="management-layout">
+                <!-- 投资组合配置 -->
+                <div class="card">
+                    <h3>⚖️ 投资组合配置</h3>
+                    <div id="portfolio-config">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+                
+                <!-- 实时持仓 -->
+                <div class="card">
+                    <h3>📊 实时持仓</h3>
+                    <div id="positions-data">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+                
+                <!-- 成交记录 -->
+                <div class="card">
+                    <h3>📋 成交记录</h3>
+                    <div id="trades-data">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+                
+                <!-- 市场数据 -->
+                <div class="card">
+                    <h3>📈 实时行情</h3>
+                    <div id="market-data">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+                
+                <!-- 策略状态 -->
+                <div class="card">
+                    <h3>🎯 策略状态</h3>
+                    <div id="strategy-status">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ========== Tab 切换功能 ==========
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                
+                // 更新按钮状态
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // 更新内容区域
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabId === 'live' ? 'live-trading' : 
+                                      tabId === 'backtest' ? 'backtest' : 'management').classList.add('active');
+            });
+        });
+        
+        // ========== 策略配置功能 ==========
+        const strategySelect = document.getElementById('strategy-select');
+        const symbolSelect = document.getElementById('symbol-select');
+        const addTaskBtn = document.getElementById('add-task-btn');
+        
+        // 检查表单完成状态
+        function checkFormComplete() {
+            if (strategySelect.value && symbolSelect.value) {
+                addTaskBtn.disabled = false;
+            } else {
+                addTaskBtn.disabled = true;
+            }
+        }
+        
+        strategySelect.addEventListener('change', checkFormComplete);
+        symbolSelect.addEventListener('change', checkFormComplete);
+        
+        // 添加任务按钮点击事件
+        addTaskBtn.addEventListener('click', () => {
+            const strategy = strategySelect.value;
+            const symbol = symbolSelect.value;
+            
+            if (!strategy || !symbol) return;
+            
+            // 创建新任务
+            addLiveTask(strategy, symbol);
+        });
+        
+        // 添加实盘任务
+        function addLiveTask(strategy, symbol) {
+            const tasksList = document.getElementById('live-tasks-list');
+            const taskId = `task-${Date.now()}`;
+            
+            const strategyNames = {
+                'ma_cross': 'MA均线策略',
+                'bollinger': '布林带策略',
+                'rsi': 'RSI策略'
+            };
+            
+            const symbolNames = {
+                'rb2405': '螺纹钢',
+                'cu2405': '沪铜',
+                'al2405': '沪铝'
+            };
+            
+            const taskHtml = `
+                <div class="task-item" data-task-id="${taskId}">
+                    <div class="task-info">
+                        <h4>${strategyNames[strategy]} - ${symbolNames[symbol]}</h4>
+                        <p>运行时间: 刚刚启动</p>
+                    </div>
+                    <div class="task-status">
+                        <span class="status-indicator status-running"></span>
+                        <span style="font-size: 12px; color: #48bb78;">运行中</span>
+                    </div>
+                </div>
+            `;
+            
+            tasksList.insertAdjacentHTML('afterbegin', taskHtml);
+            
+            // 绑定点击事件
+            const newTask = tasksList.querySelector(`[data-task-id="${taskId}"]`);
+            newTask.addEventListener('click', () => selectTask(taskId));
+            
+            // 重置表单
+            strategySelect.value = '';
+            symbolSelect.value = '';
+            checkFormComplete();
+            
+            alert(`✅ 成功添加 ${strategyNames[strategy]} 到实盘运行！`);
+        }
+        
+        // ========== 任务选择和图表显示 ==========
+        let selectedTaskId = null;
+        
+        // 绑定现有任务点击事件
+        document.querySelectorAll('.task-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const taskId = item.dataset.taskId;
+                selectTask(taskId);
+            });
+        });
+        
+        function selectTask(taskId) {
+            selectedTaskId = taskId;
+            
+            // 更新任务选择状态
+            document.querySelectorAll('.task-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelector(`[data-task-id="${taskId}"]`).classList.add('selected');
+            
+            // 显示对应的图表
+            loadLiveChart(taskId);
+        }
+        
+        function loadLiveChart(taskId) {
+            const placeholder = document.getElementById('live-chart-placeholder');
+            const canvas = document.getElementById('liveChart');
+            
+            placeholder.style.display = 'none';
+            canvas.style.display = 'block';
+            
+            // 这里可以加载对应任务的实际图表数据
+            // 目前显示演示图表
+            createDemoLiveChart();
+        }
+        
+        function createDemoLiveChart() {
+            const ctx = document.getElementById('liveChart').getContext('2d');
+            
+            // 生成演示数据
+            const labels = [];
+            const priceData = [];
+            const basePrice = 3500;
+            
+            for (let i = 0; i < 50; i++) {
+                const time = new Date(Date.now() - (50 - i) * 60000);
+                labels.push(time.toLocaleTimeString());
+                priceData.push(basePrice + Math.sin(i / 5) * 50 + Math.random() * 20);
+            }
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '实时价格',
+                        data: priceData,
+                        borderColor: '#5a67d8',
+                        backgroundColor: 'rgba(90, 103, 216, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: '价格'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '时间'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `📊 ${selectedTaskId ? selectedTaskId.toUpperCase() : '演示任务'} - 实时K线图表`
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ========== 回测功能 ==========
+        function loadBacktestChart() {
+            const statusElement = document.getElementById('backtest-chart-status');
+            statusElement.textContent = '正在加载回测数据...';
+            statusElement.style.color = '#5a67d8';
+            
+            fetch('/api/backtest/chart_data')
+                .then(response => response.json())
+                .then(data => {
+                    createBacktestChart(data);
+                    statusElement.textContent = '回测数据加载完成';
+                    statusElement.style.color = '#48bb78';
+                })
+                .catch(error => {
+                    console.error('Error loading backtest chart:', error);
+                    statusElement.textContent = '数据加载失败';
+                    statusElement.style.color = '#f56565';
+                });
+        }
+        
+        let backtestChart = null;
+        
+        function createBacktestChart(data) {
+            const ctx = document.getElementById('backtestChart').getContext('2d');
+            
+            // 销毁现有图表
+            if (backtestChart) {
+                backtestChart.destroy();
+            }
+            
+            // 简化数据处理
+            const labels = data.kline_data.map((item, index) => {
+                return index % 50 === 0 ? item.time.substring(5, 16) : '';
+            });
+            
+            const priceData = data.kline_data.map(item => item.close);
+            
+            backtestChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'K线收盘价',
+                        data: priceData,
+                        borderColor: '#4299e1',
+                        backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        borderWidth: 1.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: '价格 (元/吨)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '时间'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '📊 回测分析图表 - K线图与交易信号'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ========== WebSocket连接 ==========
+        const socket = io();
+        const connectionStatus = document.getElementById('connection-status');
+        
+        // 连接状态管理
+        socket.on('connect', () => {
+            connectionStatus.textContent = '已连接';
+            connectionStatus.className = 'connected';
+            console.log('已连接到服务器');
+        });
+        
+        socket.on('disconnect', () => {
+            connectionStatus.textContent = '未连接';
+            connectionStatus.className = 'disconnected';
+        });
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 默认选择第一个任务显示图表
+            setTimeout(() => {
+                const firstTask = document.querySelector('.task-item[data-task-id]');
+                if (firstTask && !selectedTaskId) {
+                    const taskId = firstTask.dataset.taskId;
+                    selectTask(taskId);
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

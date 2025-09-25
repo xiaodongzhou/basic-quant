@@ -1,0 +1,13 @@
+INFO:__main__:演示HTML模板创建完成
+WARNING:werkzeug:Werkzeug appears to be used in a production deployment. Consider switching to a production web server instead.
+🎯 期货量化交易系统 - 项目验收演示服务器
+============================================================
+🚀 启动演示服务器...
+📊 Web界面地址: http://localhost:5001
+🔄 实时数据: WebSocket连接
+💻 支持功能: 市场数据、策略状态、回测系统、配置管理
+============================================================
+ * Serving Flask app 'web_demo_server'
+ * Debug mode: off
+Address already in use
+Port 5001 is in use by another program. Either identify and stop that program, or start the server with a different port.
