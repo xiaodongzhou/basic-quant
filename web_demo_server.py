@@ -24,6 +24,7 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 from flask_socketio import SocketIO, emit
 import pandas as pd
 import numpy as np
+import akshare as ak
 
 # 添加项目路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -750,6 +751,401 @@ def get_trades():
             'new_trade': new_trade
         }
     })
+
+
+@app.route('/api/futures/kline_data')
+def get_futures_kline_data():
+    """获取期货K线数据 - 使用AKShare获取真实数据"""
+    
+    try:
+        # 获取请求参数
+        symbol = request.args.get('symbol', 'rb2405')  # 合约代码
+        period = request.args.get('period', '1h')      # 周期
+        limit = int(request.args.get('limit', 48))     # 数据条数
+        
+        # 动态映射合约代码到AKShare格式（基于品种识别）
+        def get_akshare_symbol(contract_code):
+            """根据合约代码获取对应的AKShare主力合约符号"""
+            contract_lower = contract_code.lower()
+            
+            # 品种到AKShare主力合约的映射
+            variety_to_akshare = {
+                'rb': 'RB0',    # 螺纹钢主力
+                'cu': 'CU0',    # 沪铜主力  
+                'al': 'AL0',    # 沪铝主力
+                'i': 'I0',      # 铁矿石主力
+                'j': 'J0',      # 焦炭主力
+                'jm': 'JM0',    # 焦煤主力
+                'hc': 'HC0',    # 热卷主力
+                'ni': 'NI0',    # 沪镍主力
+                'zn': 'ZN0',    # 沪锌主力
+                'sn': 'SN0',    # 沪锡主力
+                'pb': 'PB0',    # 沪铅主力
+                'ag': 'AG0',    # 沪银主力
+                'au': 'AU0',    # 沪金主力
+            }
+            
+            # 从合约代码中提取品种（字母部分）
+            import re
+            variety_match = re.match(r'^([a-zA-Z]+)', contract_code)
+            if variety_match:
+                variety = variety_match.group(1).lower()
+                akshare_symbol = variety_to_akshare.get(variety, 'RB0')
+                print(f"合约映射: {contract_code} -> 品种: {variety} -> AKShare: {akshare_symbol}")
+                return akshare_symbol
+            else:
+                print(f"无法识别合约品种: {contract_code}，使用默认螺纹钢")
+                return 'RB0'
+        
+        # 映射前端周期到AKShare格式
+        period_map = {
+            '5m': '5',
+            '15m': '15', 
+            '30m': '30',
+            '1h': '60',
+            '1d': 'daily'
+        }
+        
+        akshare_symbol = get_akshare_symbol(symbol)
+        akshare_period = period_map.get(period, '60')
+        
+        print(f"获取期货数据: symbol={symbol}({akshare_symbol}), period={period}({akshare_period}), limit={limit}")
+        
+        # 获取AKShare数据
+        if period == '1d':
+            # 日线数据使用不同的接口
+            df = ak.futures_zh_daily_sina(symbol=akshare_symbol)
+        else:
+            # 分钟级数据
+            df = ak.futures_zh_minute_sina(symbol=akshare_symbol, period=akshare_period)
+        
+        if df is None or len(df) == 0:
+            raise Exception("未获取到数据")
+            
+        # 取最新的limit条数据
+        df = df.tail(limit).copy()
+        
+        # 标准化数据格式
+        kline_data = []
+        for _, row in df.iterrows():
+            # 确保时间格式正确
+            if isinstance(row['datetime'], str):
+                timestamp = pd.to_datetime(row['datetime'])
+            else:
+                timestamp = row['datetime']
+                
+            kline_item = {
+                'timestamp': timestamp.isoformat(),
+                'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                'open': float(row['open']),
+                'high': float(row['high']), 
+                'low': float(row['low']),
+                'close': float(row['close']),
+                'volume': int(row['volume']) if pd.notna(row['volume']) else 0
+            }
+            kline_data.append(kline_item)
+        
+        return jsonify({
+            'success': True,
+            'timestamp': beijing_now().isoformat(),
+            'data': {
+                'symbol': symbol,
+                'period': period,
+                'kline_data': kline_data,
+                'data_source': 'akshare',
+                'count': len(kline_data)
+            }
+        })
+        
+    except Exception as e:
+        print(f"获取期货数据失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'获取期货数据失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+@app.route('/api/backtest/historical_data')
+def get_historical_data():
+    """获取回测历史数据 - 使用AKShare获取真实历史数据"""
+    
+    try:
+        # 获取请求参数
+        symbol = request.args.get('symbol', 'rb2405')     # 合约代码
+        period = request.args.get('period', '1h')         # 周期
+        start_date = request.args.get('start_date')       # 开始日期 YYYY-MM-DD
+        end_date = request.args.get('end_date')           # 结束日期 YYYY-MM-DD
+        
+        if not start_date or not end_date:
+            return jsonify({
+                'success': False,
+                'message': '缺少必要的日期参数',
+                'timestamp': beijing_now().isoformat()
+            }), 400
+        
+        # 动态映射合约代码到AKShare格式（基于品种识别）
+        def get_akshare_symbol(contract_code):
+            """根据合约代码获取对应的AKShare主力合约符号"""
+            contract_lower = contract_code.lower()
+            
+            # 品种到AKShare主力合约的映射
+            variety_to_akshare = {
+                'rb': 'RB0',    # 螺纹钢主力
+                'cu': 'CU0',    # 沪铜主力  
+                'al': 'AL0',    # 沪铝主力
+                'i': 'I0',      # 铁矿石主力
+                'j': 'J0',      # 焦炭主力
+                'jm': 'JM0',    # 焦煤主力
+                'hc': 'HC0',    # 热卷主力
+                'ni': 'NI0',    # 沪镍主力
+                'zn': 'ZN0',    # 沪锌主力
+                'sn': 'SN0',    # 沪锡主力
+                'pb': 'PB0',    # 沪铅主力
+                'ag': 'AG0',    # 沪银主力
+                'au': 'AU0',    # 沪金主力
+            }
+            
+            # 从合约代码中提取品种（字母部分）
+            import re
+            variety_match = re.match(r'^([a-zA-Z]+)', contract_code)
+            if variety_match:
+                variety = variety_match.group(1).lower()
+                akshare_symbol = variety_to_akshare.get(variety, 'RB0')
+                print(f"历史数据合约映射: {contract_code} -> 品种: {variety} -> AKShare: {akshare_symbol}")
+                return akshare_symbol
+            else:
+                print(f"无法识别合约品种: {contract_code}，使用默认螺纹钢")
+                return 'RB0'
+        
+        # 映射前端周期到AKShare格式
+        period_map = {
+            '5m': '5',
+            '15m': '15', 
+            '30m': '30',
+            '1h': '60',
+            '1d': 'daily'
+        }
+        
+        akshare_symbol = get_akshare_symbol(symbol)
+        akshare_period = period_map.get(period, '60')
+        
+        print(f"获取历史数据: symbol={symbol}({akshare_symbol}), period={period}({akshare_period}), {start_date} to {end_date}")
+        
+        # 获取AKShare历史数据
+        if period == '1d':
+            # 日线数据使用不同的接口
+            df = ak.futures_zh_daily_sina(symbol=akshare_symbol)
+        else:
+            # 分钟级数据
+            df = ak.futures_zh_minute_sina(symbol=akshare_symbol, period=akshare_period)
+        
+        if df is None or len(df) == 0:
+            raise Exception("未获取到历史数据")
+        
+        # 过滤日期范围
+        df['datetime'] = pd.to_datetime(df['datetime'])
+        start_dt = pd.to_datetime(start_date)
+        end_dt = pd.to_datetime(end_date) + pd.Timedelta(days=1)  # 包含结束日期
+        
+        df_filtered = df[(df['datetime'] >= start_dt) & (df['datetime'] < end_dt)].copy()
+        
+        if len(df_filtered) == 0:
+            # 如果指定日期范围没有数据，使用最新的数据
+            df_filtered = df.tail(100).copy()
+            print(f"指定日期范围无数据，使用最新100条记录")
+        
+        # 标准化数据格式
+        historical_data = []
+        trade_signals = []  # 模拟交易信号
+        portfolio_values = []  # 模拟组合价值
+        
+        initial_capital = 1000000
+        current_capital = initial_capital
+        position = 0  # 0: 空仓, 1: 多头, -1: 空头
+        
+        for i, (_, row) in enumerate(df_filtered.iterrows()):
+            # 确保时间格式正确
+            if isinstance(row['datetime'], str):
+                timestamp = pd.to_datetime(row['datetime'])
+            else:
+                timestamp = row['datetime']
+            
+            # OHLC数据
+            ohlc_item = {
+                'timestamp': timestamp.isoformat(),
+                'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                'open': float(row['open']),
+                'high': float(row['high']), 
+                'low': float(row['low']),
+                'close': float(row['close']),
+                'volume': int(row['volume']) if pd.notna(row['volume']) else 0
+            }
+            historical_data.append(ohlc_item)
+            
+            # 模拟简单MA交叉策略信号（每10个数据点一个信号用于演示）
+            if i > 0 and i % 10 == 0:
+                signal_type = 'buy' if i % 20 == 0 else 'sell'
+                price = float(row['close'])
+                
+                signal = {
+                    'timestamp': timestamp.isoformat(),
+                    'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                    'type': signal_type,
+                    'price': price,
+                    'volume': 1  # 1手
+                }
+                trade_signals.append(signal)
+                
+                # 更新持仓和资金（简化计算）
+                if signal_type == 'buy' and position <= 0:
+                    position = 1
+                    current_capital -= price * 1  # 买入1手
+                elif signal_type == 'sell' and position >= 0:
+                    position = -1  
+                    current_capital += price * 1  # 卖出1手
+            
+            # 组合价值
+            portfolio_value = current_capital + (position * float(row['close']))
+            portfolio_values.append({
+                'timestamp': timestamp.isoformat(),
+                'time': timestamp.strftime('%Y-%m-%d %H:%M'),
+                'value': portfolio_value,
+                'return_pct': ((portfolio_value - initial_capital) / initial_capital) * 100
+            })
+        
+        return jsonify({
+            'success': True,
+            'timestamp': beijing_now().isoformat(),
+            'data': {
+                'symbol': symbol,
+                'period': period,
+                'start_date': start_date,
+                'end_date': end_date,
+                'kline_data': historical_data,
+                'trade_signals': trade_signals,
+                'portfolio_values': portfolio_values,
+                'data_source': 'akshare_historical',
+                'count': len(historical_data)
+            }
+        })
+        
+    except Exception as e:
+        print(f"获取历史数据失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'获取历史数据失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+@app.route('/api/futures/contracts')
+def get_futures_contracts():
+    """获取期货合约列表 - 支持动态合约选择"""
+    
+    try:
+        variety = request.args.get('variety', '')  # 品种筛选，如'rb', 'cu', 'al'
+        
+        print(f"获取期货合约列表: variety={variety}")
+        
+        # 获取所有合约信息
+        df = ak.futures_fees_info()
+        
+        if df is None or len(df) == 0:
+            raise Exception("未获取到合约数据")
+        
+        # 品种映射配置
+        variety_config = {
+            'rb': {'name': '螺纹钢', 'exchange': 'SHFE'},
+            'cu': {'name': '沪铜', 'exchange': 'SHFE'}, 
+            'al': {'name': '沪铝', 'exchange': 'SHFE'},
+            'i': {'name': '铁矿石', 'exchange': 'DCE'},
+            'j': {'name': '焦炭', 'exchange': 'DCE'},
+            'jm': {'name': '焦煤', 'exchange': 'DCE'},
+            'hc': {'name': '热卷', 'exchange': 'SHFE'}
+        }
+        
+        if variety:
+            # 获取指定品种的合约
+            contracts_df = df[df['合约代码'].str.lower().str.startswith(variety.lower(), na=False)].copy()
+            
+            if len(contracts_df) == 0:
+                return jsonify({
+                    'success': False,
+                    'message': f'未找到品种 {variety} 的合约',
+                    'timestamp': beijing_now().isoformat()
+                }), 404
+            
+            # 按持仓量排序，识别主力合约
+            contracts_df = contracts_df.sort_values('持仓量', ascending=False)
+            
+            # 格式化合约列表
+            contracts = []
+            for i, (_, row) in enumerate(contracts_df.iterrows()):
+                is_main = (i == 0)  # 持仓量最大的为主力合约
+                
+                contract_info = {
+                    'code': row['合约代码'],
+                    'name': row['合约名称'],
+                    'is_main_contract': is_main,
+                    'open_interest': int(row['持仓量']) if pd.notna(row['持仓量']) else 0,
+                    'volume': int(row['成交量']) if pd.notna(row['成交量']) else 0,
+                    'price': float(row['最新价']) if pd.notna(row['最新价']) else 0.0,
+                    'exchange': row['交易所']
+                }
+                contracts.append(contract_info)
+            
+            variety_info = variety_config.get(variety.lower(), {'name': variety.upper(), 'exchange': 'Unknown'})
+            
+            return jsonify({
+                'success': True,
+                'timestamp': beijing_now().isoformat(),
+                'data': {
+                    'variety': variety.upper(),
+                    'variety_name': variety_info['name'],
+                    'exchange': variety_info['exchange'],
+                    'contracts': contracts,
+                    'main_contract': contracts[0]['code'] if contracts else None,
+                    'total_count': len(contracts)
+                }
+            })
+            
+        else:
+            # 返回所有支持的品种列表
+            varieties = []
+            for var_code, var_info in variety_config.items():
+                # 检查是否有该品种的合约
+                var_contracts = df[df['合约代码'].str.lower().str.startswith(var_code.lower(), na=False)]
+                if len(var_contracts) > 0:
+                    # 找到主力合约
+                    main_contract = var_contracts.sort_values('持仓量', ascending=False).iloc[0]
+                    
+                    varieties.append({
+                        'code': var_code.upper(),
+                        'name': var_info['name'],
+                        'exchange': var_info['exchange'],
+                        'contract_count': len(var_contracts),
+                        'main_contract': main_contract['合约代码'],
+                        'main_price': float(main_contract['最新价']) if pd.notna(main_contract['最新价']) else 0.0,
+                        'main_open_interest': int(main_contract['持仓量']) if pd.notna(main_contract['持仓量']) else 0
+                    })
+            
+            return jsonify({
+                'success': True,
+                'timestamp': beijing_now().isoformat(),
+                'data': {
+                    'varieties': varieties,
+                    'total_varieties': len(varieties)
+                }
+            })
+        
+    except Exception as e:
+        print(f"获取合约列表失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'获取合约列表失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
 
 
 @app.route('/api/portfolio/config')
@@ -1920,7 +2316,7 @@ def main():
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5014, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5035, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:

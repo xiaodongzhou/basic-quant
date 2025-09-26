@@ -497,9 +497,37 @@
             font-weight: bold;
             color: #2d3748;
         }
+        
+        /* 图表类型切换按钮样式 */
+        .btn-chart-type {
+            padding: 8px 16px;
+            background: #f7fafc;
+            color: #4a5568;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        
+        .btn-chart-type:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+        
+        .btn-chart-type.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
 </head>
 <body>
     <div id="connection-status" class="disconnected">未连接</div>
@@ -547,11 +575,28 @@
                         
                         <div class="form-group">
                             <label>选择品种:</label>
-                            <select id="symbol-select">
+                            <select id="variety-select">
                                 <option value="">请选择品种...</option>
-                                <option value="rb2405">螺纹钢</option>
-                                <option value="cu2405">沪铜</option>
-                                <option value="al2405">沪铝</option>
+                                <!-- 动态加载品种列表 -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>选择合约:</label>
+                            <select id="contract-select" disabled>
+                                <option value="">请先选择品种...</option>
+                                <!-- 动态加载合约列表 -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>合约周期:</label>
+                            <select id="contract-period-select">
+                                <option value="5m">5分钟</option>
+                                <option value="15m">15分钟</option>
+                                <option value="30m">30分钟</option>
+                                <option value="1h" selected>1小时</option>
+                                <option value="1d">日线</option>
                             </select>
                         </div>
                         
@@ -571,10 +616,10 @@
                     <div class="running-tasks">
                         <h3>🏃 运行中的任务</h3>
                         <div id="live-tasks-list">
-                            <div class="task-item" data-task-id="demo-1" data-symbol="rb2405" data-symbol-name="螺纹钢">
+                            <div class="task-item" data-task-id="demo-1" data-symbol="rb2405" data-symbol-name="螺纹钢" data-period="1h">
                                 <div class="task-info">
                                     <h4>MA均线策略 - 螺纹钢</h4>
-                                    <p>快线:5 慢线:20 | 运行时间: 2小时36分</p>
+                                    <p>快线:5 慢线:20 | 周期:1小时 | 运行时间: 2小时36分</p>
                                 </div>
                                 <div class="task-status">
                                     <span class="status-indicator status-running"></span>
@@ -586,10 +631,10 @@
                                 </div>
                             </div>
                             
-                            <div class="task-item" data-task-id="demo-2" data-symbol="cu2405" data-symbol-name="沪铜">
+                            <div class="task-item" data-task-id="demo-2" data-symbol="cu2405" data-symbol-name="沪铜" data-period="30m">
                                 <div class="task-info">
                                     <h4>布林带策略 - 沪铜</h4>
-                                    <p>周期:20 标准差:2 | 运行时间: 45分钟</p>
+                                    <p>周期:20 标准差:2 | 时间段:30分钟 | 运行时间: 45分钟</p>
                                 </div>
                                 <div class="task-status">
                                     <span class="status-indicator status-paused"></span>
@@ -605,10 +650,17 @@
                     
                     <!-- K线图表区域 -->
                     <div class="chart-container">
-                        <h3>📈 实时K线图表</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 id="live-chart-title">📈 实时K线图表</h3>
+                            <div id="live-chart-controls" style="display: none;">
+                                <!-- 图表类型切换器 -->
+                                <button id="btn-live-line-chart" class="btn-chart-type active" onclick="switchLiveChartType('line')" style="margin-right: 5px;">📈 K线图</button>
+                                <button id="btn-live-candlestick-chart" class="btn-chart-type" onclick="switchLiveChartType('candlestick')" style="margin-right: 5px;">🕯️ 蜡烛图</button>
+                            </div>
+                        </div>
                         <div id="live-chart-placeholder" style="height: 400px; display: flex; align-items: center; justify-content: center; color: #718096;">
-                            请选择左侧运行任务查看对应合约的实时K线图表<br>
-                            <small style="margin-top: 10px; display: block;">不同任务显示不同合约的K线数据</small>
+                            请选择左侧运行任务查看对应合约的K线图表<br>
+                            <small style="margin-top: 10px; display: block;">图表将显示任务配置的固定周期数据</small>
                         </div>
                         <canvas id="liveChart" style="display: none; max-height: 400px;"></canvas>
                     </div>
@@ -636,11 +688,17 @@
                         
                         <div class="form-group">
                             <label>选择品种:</label>
-                            <select id="backtest-symbol-select">
+                            <select id="backtest-variety-select">
                                 <option value="">请选择品种...</option>
-                                <option value="rb2405">螺纹钢</option>
-                                <option value="cu2405">沪铜</option>
-                                <option value="al2405">沪铝</option>
+                                <!-- 动态加载品种列表 -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>选择合约:</label>
+                            <select id="backtest-contract-select" disabled>
+                                <option value="">请先选择品种...</option>
+                                <!-- 动态加载合约列表 -->
                             </select>
                         </div>
                         
@@ -650,6 +708,18 @@
                                 <input type="date" id="backtest-start-date" style="flex: 1;">
                                 <input type="date" id="backtest-end-date" style="flex: 1;">
                             </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>数据周期:</label>
+                            <select id="backtest-period-select">
+                                <option value="">请选择周期...</option>
+                                <option value="5m">5分钟</option>
+                                <option value="15m">15分钟</option>
+                                <option value="30m">30分钟</option>
+                                <option value="1h" selected>1小时</option>
+                                <option value="1d">日线</option>
+                            </select>
                         </div>
                         
                         <div id="backtest-strategy-params">
@@ -685,6 +755,10 @@
                         <h3>📈 回测分析图表</h3>
                         <div style="margin-bottom: 15px;">
                             <button class="btn" onclick="loadBacktestChart()" style="margin-right: 10px;">📊 加载回测图表</button>
+                            <div style="display: inline-block; margin: 0 15px;">
+                                <button id="btn-line-chart" class="btn-chart-type active" onclick="switchBacktestChartType('line')" style="margin-right: 5px;">📈 K线图</button>
+                                <button id="btn-candlestick-chart" class="btn-chart-type" onclick="switchBacktestChartType('candlestick')" style="margin-right: 5px;">🕯️ 蜡烛图</button>
+                            </div>
                             <span id="backtest-chart-status" style="color: #718096; font-size: 14px;">点击按钮加载回测分析图表</span>
                         </div>
                         <div style="position: relative; height: 500px; overflow: hidden;">
@@ -767,12 +841,12 @@
         
         // ========== 策略配置功能 ==========
         // 在DOMContentLoaded中初始化，确保元素已存在
-        let strategySelect, symbolSelect, addTaskBtn;
+        let strategySelect, varietySelect, contractSelect, contractPeriodSelect, addTaskBtn;
         
         // 检查表单完成状态
         function checkFormComplete() {
-            if (strategySelect && symbolSelect && addTaskBtn) {
-                if (strategySelect.value && symbolSelect.value) {
+            if (strategySelect && varietySelect && contractSelect && contractPeriodSelect && addTaskBtn) {
+                if (strategySelect.value && varietySelect.value && contractSelect.value && contractPeriodSelect.value) {
                     addTaskBtn.disabled = false;
                 } else {
                     addTaskBtn.disabled = true;
@@ -845,7 +919,7 @@
         }
         
         // 添加实盘任务
-        function addLiveTask(strategy, symbol) {
+        function addLiveTask(strategy, symbol, period) {
             const tasksList = document.getElementById('live-tasks-list');
             const taskId = `task-${Date.now()}`;
             
@@ -855,11 +929,24 @@
                 'rsi': 'RSI策略'
             };
             
-            const symbolNames = {
-                'rb2405': '螺纹钢',
-                'cu2405': '沪铜',
-                'al2405': '沪铝'
+            const periodNames = {
+                '5m': '5分钟',
+                '15m': '15分钟',
+                '30m': '30分钟',
+                '1h': '1小时',
+                '1d': '日线'
             };
+            
+            // 动态获取合约名称（从品种中推导）
+            function getSymbolName(contract) {
+                if (contract.toLowerCase().startsWith('rb')) return '螺纹钢';
+                if (contract.toLowerCase().startsWith('cu')) return '沪铜';
+                if (contract.toLowerCase().startsWith('al')) return '沪铝';
+                if (contract.toLowerCase().startsWith('i')) return '铁矿石';
+                if (contract.toLowerCase().startsWith('j')) return '焦炭';
+                if (contract.toLowerCase().startsWith('hc')) return '热卷';
+                return contract.toUpperCase(); // 默认返回合约代码
+            }
             
             // 获取策略参数
             let paramsText = '';
@@ -884,11 +971,13 @@
                     paramsText = '默认参数';
             }
             
+            const symbolName = getSymbolName(symbol);
+            
             const taskHtml = `
-                <div class="task-item" data-task-id="${taskId}" data-symbol="${symbol}" data-symbol-name="${symbolNames[symbol]}">
+                <div class="task-item" data-task-id="${taskId}" data-symbol="${symbol}" data-symbol-name="${symbolName}" data-period="${period}">
                     <div class="task-info">
-                        <h4>${strategyNames[strategy]} - ${symbolNames[symbol]}</h4>
-                        <p>${paramsText} | 运行时间: 刚刚启动</p>
+                        <h4>${strategyNames[strategy]} - ${symbolName}</h4>
+                        <p>${paramsText} | 合约:${symbol} | 周期:${periodNames[period]} | 运行时间: 刚刚启动</p>
                     </div>
                     <div class="task-status">
                         <span class="status-indicator status-running"></span>
@@ -1026,6 +1115,7 @@
         function loadLiveChart(taskId) {
             const placeholder = document.getElementById('live-chart-placeholder');
             const canvas = document.getElementById('liveChart');
+            const chartTitle = document.getElementById('live-chart-title');
             
             // 获取任务的合约信息
             const taskItem = document.querySelector(`[data-task-id="${taskId}"]`);
@@ -1036,14 +1126,34 @@
             
             const symbol = taskItem.dataset.symbol;
             const symbolName = taskItem.dataset.symbolName;
+            const taskPeriod = taskItem.dataset.period || '1h'; // 从任务数据中获取周期
             
-            console.log(`加载K线图: 任务${taskId}, 合约${symbol} (${symbolName})`);
+            console.log(`加载K线图: 任务${taskId}, 合约${symbol} (${symbolName}), 周期${taskPeriod}`);
+            
+            // 设置当前周期为任务的固定周期
+            currentPeriod = taskPeriod;
+            
+            // 更新图表区域标题，显示当前合约和周期
+            const periodNames = {
+                '5m': '5分钟',
+                '15m': '15分钟',
+                '30m': '30分钟',
+                '1h': '1小时',
+                '1d': '日线'
+            };
+            chartTitle.textContent = `📈 ${symbolName}(${symbol}) - ${periodNames[taskPeriod]}图表`;
+            
+            selectedTaskId = taskId;
             
             placeholder.style.display = 'none';
             canvas.style.display = 'block';
             
-            // 根据合约生成对应的K线数据
-            createContractLiveChart(symbol, symbolName, taskId);
+            // 根据当前选择的图表类型创建图表
+            if (currentLiveChartType === 'candlestick') {
+                createContractLiveCandlestickChart(symbol, symbolName, taskId);
+            } else {
+                createContractLiveChart(symbol, symbolName, taskId);
+            }
         }
         
         // 全局变量存储当前图表实例
@@ -1051,6 +1161,14 @@
         
         function createContractLiveChart(symbol, symbolName, taskId) {
             const ctx = document.getElementById('liveChart').getContext('2d');
+            
+            // 保存当前参数供切换使用
+            currentLiveSymbol = symbol;
+            currentLiveSymbolName = symbolName;
+            currentLiveTaskId = taskId;
+            
+            // 显示切换按钮控件
+            document.getElementById('live-chart-controls').style.display = 'block';
             
             // 如果已有图表，先销毁
             if (currentChart) {
@@ -1060,23 +1178,19 @@
             // 根据合约设置不同的基础价格和波动特性
             const contractConfig = getContractConfig(symbol);
             
-            // 生成合约特定的K线数据
+            // 生成当前周期的OHLC数据
+            const cachedData = generateOHLCDataForPeriod(symbol, currentPeriod);
             const labels = [];
             const priceData = [];
             
-            for (let i = 0; i < 60; i++) {
-                const time = new Date(Date.now() - (60 - i) * 60000);
-                labels.push(time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }));
-                
-                // 根据合约特性生成价格数据
-                const trend = Math.sin(i / contractConfig.cycle) * contractConfig.trendStrength;
-                const noise = (Math.random() - 0.5) * contractConfig.volatility;
-                const price = contractConfig.basePrice + trend + noise;
-                priceData.push(Math.round(price * 100) / 100);
-            }
+            cachedData.forEach(item => {
+                labels.push(formatTimeForPeriod(item.time, currentPeriod));
+                priceData.push(item.close);
+            });
             
-            // 创建图表标题
-            const chartTitle = `${symbolName}(${symbol}) - 实时K线图`;
+            // 创建图表标题 - 显示任务固定的周期和数据源
+            const dataSource = cachedData.length > 0 ? (cachedData[0].dataSource === 'akshare' ? '🔴 真实数据' : '🟡 模拟数据') : '📊 数据';
+            const chartTitle = `${symbolName}(${symbol}) - ${periodConfig[currentPeriod].label}K线图 [策略周期] ${dataSource}`;
             
             console.log(`生成${symbolName}K线数据: 基础价格${contractConfig.basePrice}, 数据点${priceData.length}个`);
             
@@ -1104,7 +1218,7 @@
                             beginAtZero: false,
                             title: {
                                 display: true,
-                                text: '价格'
+                                text: getYAxisPriceTitle(symbol)
                             }
                         },
                         x: {
@@ -1126,6 +1240,131 @@
                         legend: {
                             display: true,
                             position: 'top'
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+        
+        // 实盘蜡烛图创建函数 - 中国标准配色（红涨绿跌）
+        function createContractLiveCandlestickChart(symbol, symbolName, taskId) {
+            const ctx = document.getElementById('liveChart').getContext('2d');
+            
+            // 保存当前参数
+            currentLiveSymbol = symbol;
+            currentLiveSymbolName = symbolName;
+            currentLiveTaskId = taskId;
+            
+            // 显示切换按钮控件
+            document.getElementById('live-chart-controls').style.display = 'block';
+            
+            // 如果已有图表，先销毁
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
+            // 生成当前周期的OHLC数据
+            const cachedData = generateOHLCDataForPeriod(symbol, currentPeriod);
+            const dataSource = cachedData.length > 0 ? (cachedData[0].dataSource === 'akshare' ? '🔴 真实数据' : '🟡 模拟数据') : '📊 数据';
+            console.log(`使用${symbolName}(${symbol})的${periodConfig[currentPeriod].label}蜡烛图数据: ${cachedData.length}个数据点`);
+            
+            // 转换OHLC数据为蜡烛图格式
+            const candlestickData = cachedData.map((item, index) => ({
+                x: index,
+                o: item.open,
+                h: item.high,
+                l: item.low,
+                c: item.close
+            }));
+            
+            console.log(`生成${symbolName}实盘蜡烛图: 数据点${candlestickData.length}个`);
+            
+            currentChart = new Chart(ctx, {
+                type: 'candlestick',
+                data: {
+                    datasets: [{
+                        label: `${symbolName} 实时蜡烛图`,
+                        data: candlestickData,
+                        // 中国标准配色：红涨绿跌
+                        color: {
+                            up: '#dc3545',      // 红色表示上涨
+                            down: '#198754',    // 绿色表示下跌
+                            unchanged: '#6c757d' // 灰色表示平盘
+                        },
+                        borderColor: {
+                            up: '#dc3545',
+                            down: '#198754',
+                            unchanged: '#6c757d'
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: '时间'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    const index = Math.floor(value);
+                                    const cacheKey = `${currentLiveSymbol}_${currentPeriod}`;
+                                    const data = liveContractDataCache[cacheKey];
+                                    return data && data[index] ? formatTimeForPeriod(data[index].time, currentPeriod) : '';
+                                },
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: getYAxisPriceTitle(symbol)
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `🕯️ ${symbolName}(${symbol}) - ${periodConfig[currentPeriod].label}蜡烛图 [策略周期] ${dataSource} (红涨🔴 绿跌🟢)`,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const index = Math.floor(context[0].parsed.x);
+                                    const cacheKey = `${currentLiveSymbol}_${currentPeriod}`;
+                                    const data = liveContractDataCache[cacheKey];
+                                    return data && data[index] ? data[index].time.toLocaleString('zh-CN') : '';
+                                },
+                                label: function(context) {
+                                    const parsed = context.parsed;
+                                    const change = ((parsed.c - parsed.o) / parsed.o * 100).toFixed(2);
+                                    const changeColor = parsed.c >= parsed.o ? '🔴' : '🟢';
+                                    return [
+                                        `开盘: ${parsed.o.toFixed(2)}`,
+                                        `最高: ${parsed.h.toFixed(2)}`,
+                                        `最低: ${parsed.l.toFixed(2)}`,
+                                        `收盘: ${parsed.c.toFixed(2)}`,
+                                        `涨跌: ${change}% ${changeColor}`
+                                    ];
+                                }
+                            }
                         }
                     },
                     interaction: {
@@ -1171,21 +1410,83 @@
         }
         
         // ========== 回测功能 ==========
-        function loadBacktestChart() {
+        function loadBacktestChart(strategy, symbol, period, startDate, endDate, params) {
             const statusElement = document.getElementById('backtest-chart-status');
             statusElement.textContent = '正在加载回测数据...';
             statusElement.style.color = '#5a67d8';
             
-            fetch('/api/backtest/chart_data')
+            // 构建API URL参数
+            const apiUrl = `/api/backtest/historical_data?symbol=${symbol}&period=${period}&start_date=${startDate}&end_date=${endDate}`;
+            
+            console.log(`获取回测历史数据: ${apiUrl}`);
+            
+            fetch(apiUrl)
                 .then(response => response.json())
                 .then(data => {
-                    createBacktestChart(data);
-                    statusElement.textContent = '回测数据加载完成';
+                    if (!data.success) {
+                        throw new Error(data.message || '获取数据失败');
+                    }
+                    
+                    // 保存数据供切换使用，并添加配置信息
+                    currentBacktestData = {
+                        ...data.data,
+                        strategy: strategy,
+                        params: params
+                    };
+                    
+                    // 根据当前选择的类型创建图表
+                    if (currentChartType === 'candlestick') {
+                        createBacktestCandlestickChart(currentBacktestData);
+                    } else {
+                        createBacktestChart(currentBacktestData);
+                    }
+                    
+                    statusElement.textContent = '回测数据加载完成 🔴 真实历史数据';
                     statusElement.style.color = '#48bb78';
                 })
                 .catch(error => {
                     console.error('Error loading backtest chart:', error);
-                    statusElement.textContent = '数据加载失败';
+                    statusElement.textContent = `数据加载失败: ${error.message}`;
+                    statusElement.style.color = '#f56565';
+                    
+                    // 降级到模拟数据
+                    console.log('降级使用模拟回测数据');
+                    loadBacktestChartFallback(strategy, symbol, period, params);
+                });
+        }
+        
+        // 降级函数：使用模拟数据
+        function loadBacktestChartFallback(strategy, symbol, period, params) {
+            const statusElement = document.getElementById('backtest-chart-status');
+            statusElement.textContent = '正在加载模拟回测数据...';
+            statusElement.style.color = '#ed8936';
+            
+            fetch('/api/backtest/chart_data')
+                .then(response => response.json())
+                .then(data => {
+                    // 保存数据供切换使用
+                    currentBacktestData = {
+                        ...data,
+                        strategy: strategy,
+                        params: params,
+                        symbol: symbol,
+                        period: period,
+                        data_source: 'mock_fallback'
+                    };
+                    
+                    // 根据当前选择的类型创建图表
+                    if (currentChartType === 'candlestick') {
+                        createBacktestCandlestickChart(currentBacktestData);
+                    } else {
+                        createBacktestChart(currentBacktestData);
+                    }
+                    
+                    statusElement.textContent = '回测数据加载完成 🟡 模拟数据';
+                    statusElement.style.color = '#ed8936';
+                })
+                .catch(error => {
+                    console.error('Error loading fallback chart:', error);
+                    statusElement.textContent = '数据加载完全失败';
                     statusElement.style.color = '#f56565';
                 });
         }
@@ -1230,7 +1531,7 @@
                             beginAtZero: false,
                             title: {
                                 display: true,
-                                text: '价格 (元/吨)'
+                                text: getYAxisPriceTitle(data.symbol)
                             }
                         },
                         x: {
@@ -1243,7 +1544,405 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: '📊 回测分析图表 - K线图与交易信号'
+                            text: generateBacktestChartTitle(data)
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 生成回测图表标题
+        function generateBacktestChartTitle(data) {
+            const symbolNames = {
+                'rb2405': '螺纹钢',
+                'cu2405': '沪铜', 
+                'al2405': '沪铝'
+            };
+            
+            const strategyNames = {
+                'ma_cross': 'MA均线策略',
+                'bollinger': '布林带策略',
+                'rsi': 'RSI策略'
+            };
+            
+            const dataSourceNames = {
+                'akshare_historical': '🔴 真实历史数据',
+                'mock_fallback': '🟡 模拟数据',
+                'mock': '🟡 模拟数据'
+            };
+            
+            const symbol = data.symbol || 'rb2405';
+            const period = data.period || '1h';
+            const strategy = data.strategy || 'ma_cross';
+            const dataSource = dataSourceNames[data.data_source] || '🟡 模拟数据';
+            
+            const symbolName = symbolNames[symbol] || symbol;
+            const strategyName = strategyNames[strategy] || strategy;
+            const periodName = periodConfig[period] ? periodConfig[period].label : period;
+            
+            return `📊 ${strategyName} - ${symbolName}(${symbol}) - ${periodName} ${dataSource}`;
+        }
+        
+        // 全局变量存储当前图表数据和类型
+        let currentBacktestData = null;
+        let currentChartType = 'line';
+        
+        // 实盘图表相关全局变量
+        let liveContractDataCache = {}; // 缓存每个合约的OHLC数据: {合约_周期: OHLC数据}
+        let currentLiveChartType = 'line';
+        let currentLiveSymbol = null;
+        let currentLiveSymbolName = null;
+        let currentLiveTaskId = null;
+        let currentPeriod = '1h'; // 默认1小时周期
+        
+        // 周期配置
+        const periodConfig = {
+            '5m': { minutes: 5, intervalMs: 5 * 60 * 1000, dataPoints: 48, label: '5分钟' },     // 4小时数据
+            '15m': { minutes: 15, intervalMs: 15 * 60 * 1000, dataPoints: 48, label: '15分钟' },  // 12小时数据
+            '30m': { minutes: 30, intervalMs: 30 * 60 * 1000, dataPoints: 48, label: '30分钟' },  // 24小时数据
+            '1h': { minutes: 60, intervalMs: 60 * 60 * 1000, dataPoints: 48, label: '1小时' },     // 2天数据
+            '1d': { minutes: 1440, intervalMs: 24 * 60 * 60 * 1000, dataPoints: 30, label: '日线' } // 30天数据
+        };
+        
+        // 根据合约获取Y轴价格标题
+        function getYAxisPriceTitle(contract) {
+            if (!contract) return '价格';
+            
+            const contractLower = contract.toLowerCase();
+            
+            // 商品期货 - 元/吨
+            if (contractLower.startsWith('rb')) return '价格 (元/吨)'; // 螺纹钢
+            if (contractLower.startsWith('cu')) return '价格 (元/吨)'; // 沪铜
+            if (contractLower.startsWith('al')) return '价格 (元/吨)'; // 沪铝
+            if (contractLower.startsWith('i')) return '价格 (元/吨)';  // 铁矿石
+            if (contractLower.startsWith('j')) return '价格 (元/吨)';  // 焦炭
+            if (contractLower.startsWith('hc')) return '价格 (元/吨)'; // 热卷
+            
+            // 默认返回通用标题
+            return '价格';
+        }
+        
+        // 图表类型切换函数
+        function switchBacktestChartType(chartType) {
+            // 更新按钮状态
+            document.querySelectorAll('.btn-chart-type').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${chartType}-chart`).classList.add('active');
+            
+            // 记录当前类型
+            currentChartType = chartType;
+            
+            // 如果有数据，重新创建图表
+            if (currentBacktestData) {
+                if (chartType === 'candlestick') {
+                    createBacktestCandlestickChart(currentBacktestData);
+                } else {
+                    createBacktestChart(currentBacktestData);
+                }
+            }
+        }
+        
+        // 移除周期切换功能 - 实盘固定使用策略配置的周期
+        
+        // 实盘图表类型切换函数（仅切换K线图/蜡烛图显示方式）
+        function switchLiveChartType(chartType) {
+            // 更新按钮状态
+            document.querySelectorAll('#live-chart-controls .btn-chart-type').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-live-${chartType}-chart`).classList.add('active');
+            
+            // 记录当前类型
+            currentLiveChartType = chartType;
+            
+            // 重新创建当前任务的图表（使用任务固定的周期）
+            if (currentLiveSymbol && selectedTaskId) {
+                if (chartType === 'candlestick') {
+                    createContractLiveCandlestickChart(currentLiveSymbol, currentLiveSymbolName, currentLiveTaskId);
+                } else {
+                    createContractLiveChart(currentLiveSymbol, currentLiveSymbolName, currentLiveTaskId);
+                }
+            }
+        }
+        
+        // 计算整点时间起始点
+        function getAlignedStartTime(period) {
+            const now = new Date();
+            const periodConf = periodConfig[period];
+            
+            let startTime;
+            
+            switch (period) {
+                case '5m':
+                    // 5分钟：对齐到最近的5分钟整点 (9:00, 9:05, 9:10...)
+                    startTime = new Date(now);
+                    startTime.setMinutes(Math.floor(now.getMinutes() / 5) * 5, 0, 0);
+                    break;
+                case '15m':
+                    // 15分钟：对齐到最近的15分钟整点 (9:00, 9:15, 9:30, 9:45...)
+                    startTime = new Date(now);
+                    startTime.setMinutes(Math.floor(now.getMinutes() / 15) * 15, 0, 0);
+                    break;
+                case '30m':
+                    // 30分钟：对齐到最近的30分钟整点 (9:00, 9:30, 10:00...)
+                    startTime = new Date(now);
+                    startTime.setMinutes(Math.floor(now.getMinutes() / 30) * 30, 0, 0);
+                    break;
+                case '1h':
+                    // 1小时：对齐到整点 (9:00, 10:00, 11:00...)
+                    startTime = new Date(now);
+                    startTime.setMinutes(0, 0, 0);
+                    break;
+                case '1d':
+                    // 日线：对齐到当日9:00开盘时间
+                    startTime = new Date(now);
+                    startTime.setHours(9, 0, 0, 0);
+                    // 如果现在还没到今天9点，则从昨天9点开始
+                    if (now.getHours() < 9) {
+                        startTime.setDate(startTime.getDate() - 1);
+                    }
+                    break;
+                default:
+                    startTime = new Date(now);
+            }
+            
+            return startTime;
+        }
+        
+        // 根据周期获取真实OHLC数据 - 使用AKShare数据源
+        function generateOHLCDataForPeriod(symbol, period) {
+            const cacheKey = `${symbol}_${period}`;
+            
+            // 如果已有缓存数据，直接返回
+            if (liveContractDataCache[cacheKey]) {
+                return liveContractDataCache[cacheKey];
+            }
+            
+            const periodConf = periodConfig[period];
+            console.log(`从服务器获取${symbol}的${periodConf.label}真实数据...`);
+            
+            // 同步获取数据（实际项目中建议使用异步）
+            let ohlcData = [];
+            
+            // 使用XMLHttpRequest同步获取数据
+            const xhr = new XMLHttpRequest();
+            const url = `/api/futures/kline_data?symbol=${symbol}&period=${period}&limit=${periodConf.dataPoints}`;
+            
+            xhr.open('GET', url, false); // false表示同步请求
+            xhr.send();
+            
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success && response.data.kline_data) {
+                        ohlcData = response.data.kline_data.map(item => ({
+                            time: new Date(item.timestamp),
+                            open: item.open,
+                            high: item.high,
+                            low: item.low,
+                            close: item.close,
+                            volume: item.volume,
+                            period: period,
+                            dataSource: 'akshare'
+                        }));
+                        
+                        console.log(`✅ 获取${symbol}真实数据成功: ${ohlcData.length}条记录`);
+                    } else {
+                        throw new Error(response.message || '数据格式错误');
+                    }
+                } catch (e) {
+                    console.error('解析服务器数据失败:', e);
+                    // 回退到模拟数据
+                    ohlcData = generateMockOHLCData(symbol, period);
+                }
+            } else {
+                console.error(`获取数据失败，HTTP状态: ${xhr.status}`);
+                // 回退到模拟数据
+                ohlcData = generateMockOHLCData(symbol, period);
+            }
+            
+            // 缓存数据
+            liveContractDataCache[cacheKey] = ohlcData;
+            return ohlcData;
+        }
+        
+        // 备用的模拟数据生成函数（当AKShare数据获取失败时使用）
+        function generateMockOHLCData(symbol, period) {
+            console.log(`⚠️ 使用模拟数据为 ${symbol}-${period}`);
+            
+            const contractConfig = getContractConfig(symbol);
+            const periodConf = periodConfig[period];
+            const ohlcData = [];
+            
+            let lastClose = contractConfig.basePrice;
+            const alignedEndTime = getAlignedStartTime(period);
+            
+            for (let i = 0; i < periodConf.dataPoints; i++) {
+                const time = new Date(alignedEndTime.getTime() - (periodConf.dataPoints - i - 1) * periodConf.intervalMs);
+                
+                const cycleFactor = i / (contractConfig.cycle * (periodConf.minutes / 60));
+                const trend = Math.sin(cycleFactor) * contractConfig.trendStrength;
+                
+                let volatilityMultiplier = { '5m': 0.3, '15m': 0.5, '30m': 0.7, '1h': 1.0, '1d': 2.0 }[period] || 1.0;
+                
+                const noise = (Math.random() - 0.5) * contractConfig.volatility * volatilityMultiplier;
+                const basePrice = contractConfig.basePrice + trend + noise;
+                
+                const open = lastClose;
+                const volatilityRange = contractConfig.volatility * volatilityMultiplier * 0.4;
+                const trendDirection = basePrice > open ? 1 : -1;
+                
+                const high = Math.max(open, basePrice) + Math.abs(Math.random() * volatilityRange * (1 + trendDirection * 0.3));
+                const low = Math.min(open, basePrice) - Math.abs(Math.random() * volatilityRange * (1 - trendDirection * 0.3));
+                const close = basePrice + (Math.random() - 0.5) * volatilityRange * 0.5;
+                
+                const actualHigh = Math.max(high, open, close);
+                const actualLow = Math.min(low, open, close);
+                
+                ohlcData.push({
+                    time: time,
+                    open: Math.round(open * 100) / 100,
+                    high: Math.round(actualHigh * 100) / 100,
+                    low: Math.round(actualLow * 100) / 100,
+                    close: Math.round(close * 100) / 100,
+                    period: period,
+                    dataSource: 'mock'
+                });
+                
+                lastClose = ohlcData[ohlcData.length - 1].close;
+            }
+            
+            return ohlcData;
+        }
+        
+        // 根据周期格式化时间显示
+        function formatTimeForPeriod(time, period) {
+            const date = new Date(time);
+            
+            switch (period) {
+                case '5m':
+                    // 显示精确到分钟的时间，如 "09:05", "09:10"
+                    return date.toLocaleTimeString('zh-CN', { 
+                        hour: '2-digit', minute: '2-digit' 
+                    });
+                case '15m':
+                    // 显示15分钟间隔时间，如 "09:15", "09:30"
+                    return date.toLocaleTimeString('zh-CN', { 
+                        hour: '2-digit', minute: '2-digit' 
+                    });
+                case '30m':
+                    // 显示30分钟间隔时间，如 "09:30", "10:00"
+                    return date.toLocaleTimeString('zh-CN', { 
+                        hour: '2-digit', minute: '2-digit' 
+                    });
+                case '1h':
+                    // 显示整点时间，如 "09:00", "10:00"
+                    return date.toLocaleTimeString('zh-CN', { 
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                case '1d':
+                    // 日线显示日期，如 "12-25"
+                    return date.toLocaleDateString('zh-CN', { 
+                        month: '2-digit', day: '2-digit'
+                    });
+                default:
+                    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            }
+        }
+        
+        // 蜡烛图创建函数 - 中国标准配色（红涨绿跌）
+        function createBacktestCandlestickChart(data) {
+            const ctx = document.getElementById('backtestChart').getContext('2d');
+            
+            // 销毁现有图表
+            if (backtestChart) {
+                backtestChart.destroy();
+            }
+            
+            // 转换OHLC数据为蜡烛图格式
+            const candlestickData = data.kline_data.map((item, index) => ({
+                x: index, // 使用索引作为X轴
+                o: item.open,   // 开盘
+                h: item.high,   // 最高
+                l: item.low,    // 最低
+                c: item.close   // 收盘
+            }));
+            
+            // 准备X轴标签（每50个显示一个）
+            const labels = data.kline_data.map((item, index) => {
+                return index % 50 === 0 ? item.time.substring(5, 16) : '';
+            });
+            
+            console.log('蜡烛图数据准备完成，K线数量:', candlestickData.length);
+            
+            backtestChart = new Chart(ctx, {
+                type: 'candlestick',
+                data: {
+                    datasets: [{
+                        label: '蜡烛图 OHLC',
+                        data: candlestickData,
+                        // 中国标准配色：红涨绿跌
+                        color: {
+                            up: '#dc3545',      // 红色表示上涨
+                            down: '#198754',    // 绿色表示下跌
+                            unchanged: '#6c757d' // 灰色表示平盘
+                        },
+                        borderColor: {
+                            up: '#dc3545',
+                            down: '#198754',
+                            unchanged: '#6c757d'
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: '时间'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    // 显示对应的时间标签
+                                    const index = Math.floor(value);
+                                    return data.kline_data[index] ? data.kline_data[index].time.substring(5, 16) : '';
+                                },
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: '价格 (元/吨)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '🕯️ 回测分析图表 - 蜡烛图 (红涨🔴 绿跌🟢)'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const index = Math.floor(context[0].parsed.x);
+                                    return data.kline_data[index] ? data.kline_data[index].time : '';
+                                },
+                                label: function(context) {
+                                    const parsed = context.parsed;
+                                    const change = ((parsed.c - parsed.o) / parsed.o * 100).toFixed(2);
+                                    const changeColor = parsed.c >= parsed.o ? '🔴' : '🟢';
+                                    return [
+                                        `开盘: ${parsed.o.toFixed(2)}`,
+                                        `最高: ${parsed.h.toFixed(2)}`,
+                                        `最低: ${parsed.l.toFixed(2)}`,
+                                        `收盘: ${parsed.c.toFixed(2)}`,
+                                        `涨跌: ${change}% ${changeColor}`
+                                    ];
+                                }
+                            }
                         }
                     }
                 }
@@ -1450,22 +2149,123 @@
             `;
         }
         
+        // ========== 动态合约选择功能 ==========
+        function loadVarieties() {
+            console.log('加载品种列表...');
+            
+            fetch('/api/futures/contracts')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.message || '获取品种列表失败');
+                    }
+                    
+                    // 清空并重新填充品种选择器
+                    varietySelect.innerHTML = '<option value="">请选择品种...</option>';
+                    
+                    data.data.varieties.forEach(variety => {
+                        const option = document.createElement('option');
+                        option.value = variety.code.toLowerCase();
+                        option.textContent = `${variety.name} (${variety.code})`;
+                        option.setAttribute('data-main-contract', variety.main_contract);
+                        option.setAttribute('data-main-price', variety.main_price);
+                        varietySelect.appendChild(option);
+                    });
+                    
+                    console.log('✅ 品种列表加载完成:', data.data.varieties.length, '个品种');
+                })
+                .catch(error => {
+                    console.error('加载品种列表失败:', error);
+                    // 降级到静态品种列表
+                    varietySelect.innerHTML = `
+                        <option value="">请选择品种...</option>
+                        <option value="rb">螺纹钢 (RB)</option>
+                        <option value="cu">沪铜 (CU)</option>
+                        <option value="al">沪铝 (AL)</option>
+                    `;
+                });
+        }
+        
+        function loadContractsForVariety(variety) {
+            if (!variety) {
+                contractSelect.innerHTML = '<option value="">请先选择品种...</option>';
+                contractSelect.disabled = true;
+                return;
+            }
+            
+            console.log('加载品种合约:', variety);
+            
+            // 显示加载状态
+            contractSelect.innerHTML = '<option value="">正在加载合约...</option>';
+            contractSelect.disabled = true;
+            
+            fetch(`/api/futures/contracts?variety=${variety}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.message || '获取合约列表失败');
+                    }
+                    
+                    // 清空并重新填充合约选择器
+                    contractSelect.innerHTML = '<option value="">请选择合约...</option>';
+                    
+                    data.data.contracts.forEach(contract => {
+                        const option = document.createElement('option');
+                        option.value = contract.code;
+                        
+                        // 格式化显示文本
+                        let displayText = contract.code;
+                        if (contract.is_main_contract) {
+                            displayText += ' 🔴主力';
+                        }
+                        displayText += ` (价格:${contract.price}, 持仓:${contract.open_interest.toLocaleString()})`;
+                        
+                        option.textContent = displayText;
+                        option.setAttribute('data-is-main', contract.is_main_contract);
+                        option.setAttribute('data-price', contract.price);
+                        option.setAttribute('data-open-interest', contract.open_interest);
+                        contractSelect.appendChild(option);
+                    });
+                    
+                    contractSelect.disabled = false;
+                    console.log('✅ 合约列表加载完成:', data.data.contracts.length, '个合约');
+                    
+                    // 如果有主力合约，自动选中
+                    const mainContract = data.data.contracts.find(c => c.is_main_contract);
+                    if (mainContract) {
+                        contractSelect.value = mainContract.code;
+                        console.log('🎯 自动选择主力合约:', mainContract.code);
+                    }
+                    
+                    checkFormComplete();
+                })
+                .catch(error => {
+                    console.error('加载合约列表失败:', error);
+                    contractSelect.innerHTML = '<option value="">加载失败，请重试</option>';
+                    contractSelect.disabled = false;
+                });
+        }
+        
         // ========== 回测配置功能 ==========
-        let backtestStrategySelect, backtestSymbolSelect, runBacktestBtn;
+        let backtestStrategySelect, backtestVarietySelect, backtestContractSelect, backtestPeriodSelect, runBacktestBtn;
         
         function initializeBacktestConfig() {
             console.log('初始化回测配置...');
             
             // 获取回测配置相关元素
             backtestStrategySelect = document.getElementById('backtest-strategy-select');
-            backtestSymbolSelect = document.getElementById('backtest-symbol-select');
+            backtestVarietySelect = document.getElementById('backtest-variety-select');
+            backtestContractSelect = document.getElementById('backtest-contract-select');
+            backtestPeriodSelect = document.getElementById('backtest-period-select');
             runBacktestBtn = document.getElementById('run-backtest-btn');
             
             console.log('回测策略选择器:', backtestStrategySelect ? '找到' : '未找到');
-            console.log('回测品种选择器:', backtestSymbolSelect ? '找到' : '未找到');
+            console.log('回测品种选择器:', backtestVarietySelect ? '找到' : '未找到');
+            console.log('回测合约选择器:', backtestContractSelect ? '找到' : '未找到');
+            console.log('回测数据周期选择器:', backtestPeriodSelect ? '找到' : '未找到');
             console.log('运行回测按钮:', runBacktestBtn ? '找到' : '未找到');
             
-            if (backtestStrategySelect && backtestSymbolSelect && runBacktestBtn) {
+            if (backtestStrategySelect && backtestVarietySelect && backtestContractSelect && backtestPeriodSelect && runBacktestBtn) {
                 // 绑定事件监听器
                 backtestStrategySelect.addEventListener('change', () => {
                     console.log('回测策略选择改变:', backtestStrategySelect.value);
@@ -1473,10 +2273,24 @@
                     checkBacktestFormComplete();
                 });
                 
-                backtestSymbolSelect.addEventListener('change', () => {
-                    console.log('回测品种选择改变:', backtestSymbolSelect.value);
+                backtestVarietySelect.addEventListener('change', () => {
+                    console.log('回测品种选择改变:', backtestVarietySelect.value);
+                    loadBacktestContractsForVariety(backtestVarietySelect.value);
                     checkBacktestFormComplete();
                 });
+                
+                backtestContractSelect.addEventListener('change', () => {
+                    console.log('回测合约选择改变:', backtestContractSelect.value);
+                    checkBacktestFormComplete();
+                });
+                
+                backtestPeriodSelect.addEventListener('change', () => {
+                    console.log('回测数据周期选择改变:', backtestPeriodSelect.value);
+                    checkBacktestFormComplete();
+                });
+                
+                // 初始化加载回测品种列表
+                loadBacktestVarieties();
                 
                 console.log('✅ 回测事件监听器已绑定');
                 
@@ -1551,11 +2365,11 @@
         }
         
         function checkBacktestFormComplete() {
-            if (backtestStrategySelect && backtestSymbolSelect && runBacktestBtn) {
+            if (backtestStrategySelect && backtestVarietySelect && backtestContractSelect && backtestPeriodSelect && runBacktestBtn) {
                 const startDate = document.getElementById('backtest-start-date')?.value;
                 const endDate = document.getElementById('backtest-end-date')?.value;
                 
-                if (backtestStrategySelect.value && backtestSymbolSelect.value && startDate && endDate) {
+                if (backtestStrategySelect.value && backtestVarietySelect.value && backtestContractSelect.value && backtestPeriodSelect.value && startDate && endDate) {
                     runBacktestBtn.disabled = false;
                 } else {
                     runBacktestBtn.disabled = true;
@@ -1583,22 +2397,117 @@
             }
         }
         
+        // 回测系统的品种和合约加载函数
+        function loadBacktestVarieties() {
+            console.log('加载回测品种列表...');
+            
+            fetch('/api/futures/contracts')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.message || '获取品种列表失败');
+                    }
+                    
+                    // 清空并重新填充品种选择器
+                    backtestVarietySelect.innerHTML = '<option value="">请选择品种...</option>';
+                    
+                    data.data.varieties.forEach(variety => {
+                        const option = document.createElement('option');
+                        option.value = variety.code.toLowerCase();
+                        option.textContent = `${variety.name} (${variety.code})`;
+                        backtestVarietySelect.appendChild(option);
+                    });
+                    
+                    console.log('✅ 回测品种列表加载完成:', data.data.varieties.length, '个品种');
+                })
+                .catch(error => {
+                    console.error('加载回测品种列表失败:', error);
+                    // 降级到静态品种列表
+                    backtestVarietySelect.innerHTML = `
+                        <option value="">请选择品种...</option>
+                        <option value="rb">螺纹钢 (RB)</option>
+                        <option value="cu">沪铜 (CU)</option>
+                        <option value="al">沪铝 (AL)</option>
+                    `;
+                });
+        }
+        
+        function loadBacktestContractsForVariety(variety) {
+            if (!variety) {
+                backtestContractSelect.innerHTML = '<option value="">请先选择品种...</option>';
+                backtestContractSelect.disabled = true;
+                return;
+            }
+            
+            console.log('加载回测品种合约:', variety);
+            
+            // 显示加载状态
+            backtestContractSelect.innerHTML = '<option value="">正在加载合约...</option>';
+            backtestContractSelect.disabled = true;
+            
+            fetch(`/api/futures/contracts?variety=${variety}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.message || '获取合约列表失败');
+                    }
+                    
+                    // 清空并重新填充合约选择器
+                    backtestContractSelect.innerHTML = '<option value="">请选择合约...</option>';
+                    
+                    data.data.contracts.forEach(contract => {
+                        const option = document.createElement('option');
+                        option.value = contract.code;
+                        
+                        // 格式化显示文本
+                        let displayText = contract.code;
+                        if (contract.is_main_contract) {
+                            displayText += ' 🔴主力';
+                        }
+                        displayText += ` (价格:${contract.price})`;
+                        
+                        option.textContent = displayText;
+                        option.setAttribute('data-is-main', contract.is_main_contract);
+                        backtestContractSelect.appendChild(option);
+                    });
+                    
+                    backtestContractSelect.disabled = false;
+                    console.log('✅ 回测合约列表加载完成:', data.data.contracts.length, '个合约');
+                    
+                    // 如果有主力合约，自动选中
+                    const mainContract = data.data.contracts.find(c => c.is_main_contract);
+                    if (mainContract) {
+                        backtestContractSelect.value = mainContract.code;
+                        console.log('🎯 回测自动选择主力合约:', mainContract.code);
+                    }
+                    
+                    checkBacktestFormComplete();
+                })
+                .catch(error => {
+                    console.error('加载回测合约列表失败:', error);
+                    backtestContractSelect.innerHTML = '<option value="">加载失败，请重试</option>';
+                    backtestContractSelect.disabled = false;
+                });
+        }
+        
         function runBacktest() {
             const strategy = backtestStrategySelect.value;
-            const symbol = backtestSymbolSelect.value;
+            const variety = backtestVarietySelect.value;
+            const contract = backtestContractSelect.value;
+            const period = backtestPeriodSelect.value;
             const startDate = document.getElementById('backtest-start-date').value;
             const endDate = document.getElementById('backtest-end-date').value;
             
-            console.log('运行回测:', { strategy, symbol, startDate, endDate });
+            console.log('运行回测:', { strategy, variety, contract, period, startDate, endDate });
             
             // 获取策略参数
             const params = getBacktestStrategyParams(strategy);
             
-            // 显示回测结果
-            loadBacktestResults(strategy, symbol, startDate, endDate, params);
+            // 显示回测结果（使用具体合约）
+            loadBacktestResults(strategy, contract, period, startDate, endDate, params);
             
-            // 加载回测图表
-            loadBacktestChart();
+            // 加载回测图表（传递完整参数，使用具体合约）
+            loadBacktestChart(strategy, contract, period, startDate, endDate, params);
         }
         
         function getBacktestStrategyParams(strategy) {
@@ -1623,7 +2532,7 @@
             return params;
         }
         
-        function loadBacktestResults(strategy, symbol, startDate, endDate, params) {
+        function loadBacktestResults(strategy, symbol, period, startDate, endDate, params) {
             const resultsDiv = document.getElementById('backtest-results');
             const metricsDiv = document.getElementById('backtest-metrics');
             
@@ -1640,7 +2549,7 @@
             };
             
             // 生成模拟回测结果
-            const mockResults = generateMockBacktestResults(strategy, symbol);
+            const mockResults = generateMockBacktestResults(strategy, symbol, period);
             
             // 显示回测结果摘要
             resultsDiv.innerHTML = `
@@ -1652,6 +2561,10 @@
                     <div class="summary-row">
                         <span>品种:</span>
                         <span>${symbolNames[symbol]} (${symbol})</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>数据周期:</span>
+                        <span>${periodConfig[period] ? periodConfig[period].label : period}</span>
                     </div>
                     <div class="summary-row">
                         <span>回测期间:</span>
@@ -1732,14 +2645,18 @@
             
             // 获取策略配置相关元素
             strategySelect = document.getElementById('strategy-select');
-            symbolSelect = document.getElementById('symbol-select');
+            varietySelect = document.getElementById('variety-select');
+            contractSelect = document.getElementById('contract-select');
+            contractPeriodSelect = document.getElementById('contract-period-select');
             addTaskBtn = document.getElementById('add-task-btn');
             
             console.log('策略选择器:', strategySelect ? '找到' : '未找到');
-            console.log('品种选择器:', symbolSelect ? '找到' : '未找到');
+            console.log('品种选择器:', varietySelect ? '找到' : '未找到');
+            console.log('合约选择器:', contractSelect ? '找到' : '未找到');
+            console.log('合约周期选择器:', contractPeriodSelect ? '找到' : '未找到');
             console.log('添加按钮:', addTaskBtn ? '找到' : '未找到');
             
-            if (strategySelect && symbolSelect && addTaskBtn) {
+            if (strategySelect && varietySelect && contractSelect && contractPeriodSelect && addTaskBtn) {
                 // 绑定事件监听器
                 strategySelect.addEventListener('change', () => {
                     console.log('策略选择改变:', strategySelect.value);
@@ -1747,22 +2664,38 @@
                     checkFormComplete();
                 });
                 
-                symbolSelect.addEventListener('change', () => {
-                    console.log('品种选择改变:', symbolSelect.value);
+                varietySelect.addEventListener('change', () => {
+                    console.log('品种选择改变:', varietySelect.value);
+                    loadContractsForVariety(varietySelect.value);
+                    checkFormComplete();
+                });
+                
+                contractSelect.addEventListener('change', () => {
+                    console.log('合约选择改变:', contractSelect.value);
+                    checkFormComplete();
+                });
+                
+                contractPeriodSelect.addEventListener('change', () => {
+                    console.log('合约周期选择改变:', contractPeriodSelect.value);
                     checkFormComplete();
                 });
                 
                 // 添加任务按钮点击事件
                 addTaskBtn.addEventListener('click', () => {
                     const strategy = strategySelect.value;
-                    const symbol = symbolSelect.value;
+                    const variety = varietySelect.value;
+                    const contract = contractSelect.value;
+                    const period = contractPeriodSelect.value;
                     
-                    console.log('添加任务:', strategy, symbol);
-                    if (!strategy || !symbol) return;
+                    console.log('添加任务:', strategy, variety, contract, period);
+                    if (!strategy || !variety || !contract || !period) return;
                     
                     // 创建新任务
-                    addLiveTask(strategy, symbol);
+                    addLiveTask(strategy, contract, period); // 使用具体合约而不是品种
                 });
+                
+                // 初始化加载品种列表
+                loadVarieties();
                 
                 console.log('✅ 事件监听器已绑定');
             } else {
