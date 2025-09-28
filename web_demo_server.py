@@ -1178,7 +1178,10 @@ def get_futures_contracts():
         
         if variety:
             # 获取指定品种的合约
-            contracts_df = df[df['合约代码'].str.lower().str.startswith(variety.lower(), na=False)].copy()
+            # 精确匹配品种代码，避免短代码被长代码误匹配
+            import re
+            variety_pattern = f"^{re.escape(variety.lower())}\\d"  # 品种代码后必须跟数字
+            contracts_df = df[df['合约代码'].str.lower().str.match(variety_pattern, na=False)].copy()
             
             if len(contracts_df) == 0:
                 return jsonify({
@@ -1224,9 +1227,14 @@ def get_futures_contracts():
         else:
             # 返回所有支持的品种列表
             varieties = []
-            for var_code, var_info in variety_config.items():
-                # 检查是否有该品种的合约
-                var_contracts = df[df['合约代码'].str.lower().str.startswith(var_code.lower(), na=False)]
+            # 按品种代码长度降序排序，避免短代码被长代码覆盖
+            sorted_varieties = sorted(variety_config.items(), key=lambda x: len(x[0]), reverse=True)
+            
+            for var_code, var_info in sorted_varieties:
+                # 检查是否有该品种的合约 - 精确匹配避免误识别
+                import re
+                variety_pattern = f"^{re.escape(var_code.lower())}\\d"
+                var_contracts = df[df['合约代码'].str.lower().str.match(variety_pattern, na=False)]
                 if len(var_contracts) > 0:
                     # 找到主力合约
                     main_contract = var_contracts.sort_values('持仓量', ascending=False).iloc[0]
