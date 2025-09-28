@@ -1429,13 +1429,46 @@ def generate_mock_technical_indicators(symbol, period, limit, indicators):
     try:
         print(f"生成模拟技术指标数据: {symbol}")
         
-        # 生成模拟价格数据
-        base_price = 3500 if symbol.lower().startswith('rb') else 1000
-        dates = pd.date_range(end=pd.Timestamp.now(), periods=limit, freq='H')
+        # 生成模拟价格数据 - 根据合约动态变化
+        # 为不同合约设置不同的基础价格
+        price_mapping = {
+            'rb': 3500,  # 螺纹钢
+            'cu': 70000,  # 沪铜
+            'al': 18000,  # 沪铝  
+            'zn': 25000,  # 沪锌
+            'ni': 130000, # 镍
+            'au': 470,    # 黄金
+            'ag': 5500,   # 白银
+            'i': 800,     # 铁矿石
+            'j': 2300,    # 焦炭
+            'jm': 1400,   # 焦煤
+        }
         
-        # 生成随机价格走势
-        np.random.seed(42)
-        returns = np.random.normal(0.001, 0.02, limit)
+        # 根据合约代码获取基础价格
+        variety = None
+        symbol_lower = symbol.lower()
+        for v in sorted(price_mapping.keys(), key=len, reverse=True):
+            if symbol_lower.startswith(v):
+                variety = v
+                break
+        
+        base_price = price_mapping.get(variety, 3000)
+        
+        # 根据时间生成时间序列 - 使用不同的周期
+        freq_mapping = {
+            '5m': '5min', '15m': '15min', '30m': '30min', 
+            '1h': 'H', '1d': 'D'
+        }
+        freq = freq_mapping.get(period, 'H')
+        dates = pd.date_range(end=pd.Timestamp.now(), periods=limit, freq=freq)
+        
+        # 使用合约和时间作为随机种子，确保相同合约相同周期产生相同但不同合约间不同的数据
+        seed = hash(f"{symbol}_{period}") % (2**32)
+        np.random.seed(seed)
+        
+        # 生成更真实的价格走势
+        volatility = 0.015 if variety in ['rb', 'cu', 'i'] else 0.02  # 不同品种不同波动率
+        returns = np.random.normal(0.0005, volatility, limit)
         prices = [base_price]
         for ret in returns[1:]:
             prices.append(prices[-1] * (1 + ret))
@@ -3039,13 +3072,13 @@ def main():
     
     # 启动服务器
     print("🚀 启动演示服务器...")
-    print("📊 Web界面地址: http://localhost:5016")
+    print("📊 Web界面地址: http://localhost:5017")
     print("🔄 实时数据: WebSocket连接")
     print("💻 支持功能: 市场数据、策略状态、回测系统、配置管理")
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5016, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5017, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:
