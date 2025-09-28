@@ -33,6 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core.backtest_engine import BacktestEngine, BacktestConfig, run_portfolio_backtest
 from core.strategy_portfolio_config import PortfolioConfig, StrategyConfig, StrategyAllocation, ConfigManager
 from core.multi_strategy_manager import StrategyAllocationMethod
+from core.technical_indicators import TechnicalIndicators, DEFAULT_INDICATOR_PARAMS, get_signal_analysis
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -1252,6 +1253,257 @@ def get_futures_contracts():
         return jsonify({
             'success': False,
             'message': f'获取合约列表失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+@app.route('/api/futures/technical_indicators')
+def get_technical_indicators():
+    """获取期货技术指标数据"""
+    
+    try:
+        # 获取请求参数
+        symbol = request.args.get('symbol', 'rb2405')
+        period = request.args.get('period', '1h')
+        limit = int(request.args.get('limit', 100))
+        indicators = request.args.get('indicators', 'macd,rsi,kdj,bollinger').split(',')
+        
+        print(f"获取技术指标: symbol={symbol}, period={period}, limit={limit}, indicators={indicators}")
+        
+        # 动态映射合约代码到AKShare格式
+        def get_akshare_symbol(contract_code):
+            contract_lower = contract_code.lower()
+            
+            # 品种到AKShare主力合约的映射 (与get_futures_kline_data保持一致)
+            variety_to_akshare = {
+                # 商品期货 - 黑色系
+                'rb': 'RB0', 'i': 'I0', 'j': 'J0', 'jm': 'JM0', 'hc': 'HC0',
+                # 商品期货 - 有色金属  
+                'cu': 'CU0', 'al': 'AL0', 'ni': 'NI0', 'zn': 'ZN0', 'sn': 'SN0', 'pb': 'PB0',
+                # 贵金属
+                'ag': 'AG0', 'au': 'AU0',
+                # 股指期货
+                'if': 'IF0', 'ic': 'IC0', 'ih': 'IH0', 'im': 'IM0', 
+                # 农产品期货
+                'a': 'A0', 'b': 'B0', 'c': 'C0', 'm': 'M0', 'y': 'Y0', 'p': 'P0',
+                'sr': 'SR0', 'cf': 'CF0', 'ta': 'TA0', 'rm': 'RM0', 'oi': 'OI0',
+                # 能源化工  
+                'sc': 'SC0', 'pta': 'PTA0', 'ma': 'MA0', 'l': 'L0', 'v': 'V0',
+                'pp': 'PP0', 'eg': 'EG0', 'eb': 'EB0', 'fu': 'FU0'
+            }
+            
+            # 从合约代码中提取品种
+            variety = None
+            for v in sorted(variety_to_akshare.keys(), key=len, reverse=True):
+                if contract_lower.startswith(v):
+                    variety = v
+                    break
+            
+            akshare_symbol = variety_to_akshare.get(variety, 'RB0')
+            print(f"合约映射: {contract_code} -> {variety} -> {akshare_symbol}")
+            return akshare_symbol
+        
+        # 获取AKShare符号并获取数据
+        akshare_symbol = get_akshare_symbol(symbol)
+        
+        try:
+            # 获取期货数据
+            df = ak.futures_zh_minute_sina(symbol=akshare_symbol, period=period)
+            
+            if df is None or len(df) == 0:
+                raise Exception(f"未获取到{akshare_symbol}的数据")
+            
+            print(f"获取到{len(df)}条数据，数据时间范围: {df.index[0]} 到 {df.index[-1]}")
+            
+            # 限制数据量
+            if len(df) > limit:
+                df = df.tail(limit)
+            
+            # 确保数据列名正确
+            df.columns = ['open', 'high', 'low', 'close', 'volume']
+            
+            # 添加模拟成交量（如果没有）
+            if 'volume' not in df.columns or df['volume'].isna().all():
+                df['volume'] = np.random.randint(1000, 10000, len(df))
+            
+            # 计算选择的技术指标
+            indicator_results = {}
+            
+            # 准备指标参数
+            params = DEFAULT_INDICATOR_PARAMS.copy()
+            
+            # 计算指标
+            if 'macd' in indicators:
+                macd_data = TechnicalIndicators.calculate_macd(df, **params['macd'])
+                if macd_data:
+                    indicator_results['macd'] = macd_data
+            
+            if 'rsi' in indicators:
+                rsi_data = TechnicalIndicators.calculate_rsi(df, **params['rsi'])
+                if len(rsi_data) > 0:
+                    indicator_results['rsi'] = rsi_data
+            
+            if 'kdj' in indicators:
+                kdj_data = TechnicalIndicators.calculate_kdj(df, **params['kdj'])
+                if kdj_data:
+                    indicator_results['kdj'] = kdj_data
+            
+            if 'bollinger' in indicators:
+                bb_data = TechnicalIndicators.calculate_bollinger_bands(df, **params['bollinger'])
+                if bb_data:
+                    indicator_results['bollinger'] = bb_data
+                    
+            if 'obv' in indicators:
+                obv_data = TechnicalIndicators.calculate_obv(df, **params['obv'])
+                if len(obv_data) > 0:
+                    indicator_results['obv'] = obv_data
+                    
+            if 'vrsi' in indicators:
+                vrsi_data = TechnicalIndicators.calculate_vrsi(df, **params['vrsi'])
+                if len(vrsi_data) > 0:
+                    indicator_results['vrsi'] = vrsi_data
+            
+            # 格式化指标数据用于API响应
+            formatted_indicators = TechnicalIndicators.format_indicators_for_api(
+                indicator_results, data_length=limit
+            )
+            
+            # 生成信号分析
+            signals = get_signal_analysis(formatted_indicators)
+            
+            # 准备时间序列
+            timestamps = [dt.strftime('%Y-%m-%d %H:%M:%S') for dt in df.index[-limit:]]
+            
+            # 准备价格数据
+            price_data = {
+                'timestamps': timestamps,
+                'open': df['open'].tail(limit).tolist(),
+                'high': df['high'].tail(limit).tolist(), 
+                'low': df['low'].tail(limit).tolist(),
+                'close': df['close'].tail(limit).tolist(),
+                'volume': df['volume'].tail(limit).tolist()
+            }
+            
+            response_data = {
+                'success': True,
+                'symbol': symbol,
+                'akshare_symbol': akshare_symbol,
+                'period': period,
+                'data_count': len(timestamps),
+                'price_data': price_data,
+                'indicators': formatted_indicators,
+                'signals': signals,
+                'parameters': params,
+                'timestamp': beijing_now().isoformat()
+            }
+            
+            return jsonify(response_data)
+            
+        except Exception as ak_error:
+            print(f"AKShare数据获取失败: {str(ak_error)}")
+            # 降级到模拟数据
+            return generate_mock_technical_indicators(symbol, period, limit, indicators)
+            
+    except Exception as e:
+        print(f"获取技术指标失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'获取技术指标失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+def generate_mock_technical_indicators(symbol, period, limit, indicators):
+    """生成模拟技术指标数据 - 用于演示"""
+    
+    try:
+        print(f"生成模拟技术指标数据: {symbol}")
+        
+        # 生成模拟价格数据
+        base_price = 3500 if symbol.lower().startswith('rb') else 1000
+        dates = pd.date_range(end=pd.Timestamp.now(), periods=limit, freq='H')
+        
+        # 生成随机价格走势
+        np.random.seed(42)
+        returns = np.random.normal(0.001, 0.02, limit)
+        prices = [base_price]
+        for ret in returns[1:]:
+            prices.append(prices[-1] * (1 + ret))
+        
+        # 构建DataFrame  
+        df = pd.DataFrame({
+            'open': np.array(prices) * np.random.uniform(0.995, 1.005, limit),
+            'high': np.array(prices) * np.random.uniform(1.000, 1.020, limit),
+            'low': np.array(prices) * np.random.uniform(0.980, 1.000, limit),
+            'close': prices,
+            'volume': np.random.randint(1000, 10000, limit)
+        }, index=dates)
+        
+        # 计算技术指标
+        indicator_results = {}
+        params = DEFAULT_INDICATOR_PARAMS.copy()
+        
+        if 'macd' in indicators:
+            macd_data = TechnicalIndicators.calculate_macd(df, **params['macd'])
+            if macd_data:
+                indicator_results['macd'] = macd_data
+        
+        if 'rsi' in indicators:
+            rsi_data = TechnicalIndicators.calculate_rsi(df, **params['rsi'])
+            if len(rsi_data) > 0:
+                indicator_results['rsi'] = rsi_data
+        
+        if 'kdj' in indicators:
+            kdj_data = TechnicalIndicators.calculate_kdj(df, **params['kdj'])
+            if kdj_data:
+                indicator_results['kdj'] = kdj_data
+        
+        if 'bollinger' in indicators:
+            bb_data = TechnicalIndicators.calculate_bollinger_bands(df, **params['bollinger'])
+            if bb_data:
+                indicator_results['bollinger'] = bb_data
+        
+        # 格式化指标数据
+        formatted_indicators = TechnicalIndicators.format_indicators_for_api(
+            indicator_results, data_length=limit
+        )
+        
+        # 生成信号分析
+        signals = get_signal_analysis(formatted_indicators)
+        
+        # 准备响应数据
+        timestamps = [dt.strftime('%Y-%m-%d %H:%M:%S') for dt in df.index]
+        
+        price_data = {
+            'timestamps': timestamps,
+            'open': df['open'].tolist(),
+            'high': df['high'].tolist(),
+            'low': df['low'].tolist(), 
+            'close': df['close'].tolist(),
+            'volume': df['volume'].tolist()
+        }
+        
+        response_data = {
+            'success': True,
+            'symbol': symbol,
+            'akshare_symbol': 'MOCK_DATA',
+            'period': period,
+            'data_count': len(timestamps),
+            'price_data': price_data,
+            'indicators': formatted_indicators,
+            'signals': signals,
+            'parameters': params,
+            'is_mock': True,
+            'timestamp': beijing_now().isoformat()
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"生成模拟技术指标失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'生成模拟技术指标失败: {str(e)}',
             'timestamp': beijing_now().isoformat()
         }), 500
 

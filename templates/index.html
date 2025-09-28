@@ -524,6 +524,74 @@
             color: white;
             border-color: #667eea;
         }
+        
+        /* 技术指标样式 */
+        .technical-indicators-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .indicator-chart {
+            background: #f8fafc;
+            border-radius: 6px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            min-height: 250px;
+        }
+        
+        .indicator-chart canvas {
+            width: 100% !important;
+            max-height: 200px;
+        }
+        
+        .signal-box {
+            margin-top: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #4299e1;
+            font-size: 12px;
+            color: #2d3748;
+        }
+        
+        .signals-summary {
+            background: #f7fafc;
+            border-radius: 6px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .signals-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .signal-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #38b2ac;
+            font-size: 13px;
+        }
+        
+        .signal-item.bullish {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+        
+        .signal-item.bearish {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+        
+        .signal-item.neutral {
+            border-left-color: #ed8936;
+            background: #fffaf0;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -663,6 +731,58 @@
                             <small style="margin-top: 10px; display: block;">图表将显示任务配置的固定周期数据</small>
                         </div>
                         <canvas id="liveChart" style="display: none; max-height: 400px;"></canvas>
+                    </div>
+                    
+                    <!-- 技术指标区域 -->
+                    <div class="technical-indicators-container" style="margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 id="indicators-title">📊 技术指标分析</h3>
+                            <div id="indicators-controls" style="display: none;">
+                                <!-- 指标类型选择器 -->
+                                <button id="btn-macd" class="btn-chart-type active" onclick="toggleIndicator('macd')" style="margin-right: 5px;">MACD</button>
+                                <button id="btn-rsi" class="btn-chart-type" onclick="toggleIndicator('rsi')" style="margin-right: 5px;">RSI</button>
+                                <button id="btn-kdj" class="btn-chart-type" onclick="toggleIndicator('kdj')" style="margin-right: 5px;">KDJ</button>
+                                <button id="btn-bollinger" class="btn-chart-type" onclick="toggleIndicator('bollinger')" style="margin-right: 5px;">布林带</button>
+                                <button class="btn" onclick="refreshIndicators()" style="margin-left: 10px;">🔄 刷新指标</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 指标图表区域 -->
+                        <div id="indicators-charts" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <!-- MACD图表 -->
+                            <div class="indicator-chart" id="macd-chart-container">
+                                <h4 style="margin-bottom: 10px; color: #4299e1;">MACD (移动平均收敛发散)</h4>
+                                <canvas id="macdChart" width="400" height="200"></canvas>
+                                <div id="macd-signals" class="signal-box"></div>
+                            </div>
+                            
+                            <!-- RSI图表 -->
+                            <div class="indicator-chart" id="rsi-chart-container" style="display: none;">
+                                <h4 style="margin-bottom: 10px; color: #ed8936;">RSI (相对强弱指标)</h4>
+                                <canvas id="rsiChart" width="400" height="200"></canvas>
+                                <div id="rsi-signals" class="signal-box"></div>
+                            </div>
+                            
+                            <!-- KDJ图表 -->
+                            <div class="indicator-chart" id="kdj-chart-container" style="display: none;">
+                                <h4 style="margin-bottom: 10px; color: #38b2ac;">KDJ (随机指标)</h4>
+                                <canvas id="kdjChart" width="400" height="200"></canvas>
+                                <div id="kdj-signals" class="signal-box"></div>
+                            </div>
+                            
+                            <!-- 布林带图表 -->
+                            <div class="indicator-chart" id="bollinger-chart-container" style="display: none;">
+                                <h4 style="margin-bottom: 10px; color: #9f7aea;">布林带 (Bollinger Bands)</h4>
+                                <canvas id="bollingerChart" width="400" height="200"></canvas>
+                                <div id="bollinger-signals" class="signal-box"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 综合信号分析 -->
+                        <div id="signals-summary" class="signals-summary" style="margin-top: 15px; display: none;">
+                            <h4 style="margin-bottom: 10px;">📈 综合信号分析</h4>
+                            <div id="signals-content" class="signals-content"></div>
+                        </div>
                     </div>
                 </div>
             </div>
