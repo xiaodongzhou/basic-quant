@@ -2908,7 +2908,7 @@
         
         // 切换指标显示
         function toggleIndicator(indicatorType) {
-            console.log(`切换技术指标: ${indicatorType}`);
+            console.log(`🔄 切换技术指标: ${indicatorType}`);
             
             // 更新按钮状态
             document.querySelectorAll('.btn-chart-type').forEach(btn => {
@@ -2929,9 +2929,14 @@
                 }
             });
             
-            // 如果有数据，重新绘制图表
+            // 如果有数据，重新绘制当前选中指标的图表
             if (currentIndicatorData) {
+                console.log(`📊 重新绘制${indicatorType.toUpperCase()}图表...`);
                 drawIndicatorChart(indicatorType, currentIndicatorData);
+            } else {
+                console.log(`🔄 没有缓存数据，重新加载技术指标...`);
+                // 如果没有数据，重新加载
+                loadTechnicalIndicators();
             }
         }
         
@@ -3054,12 +3059,6 @@
                     console.log('✅ 技术指标数据获取成功', data);
                     currentIndicatorData = data;
                     
-                    // 显示控制按钮
-                    const controlsDiv = document.getElementById('indicators-controls');
-                    if (controlsDiv) {
-                        controlsDiv.style.display = 'block';
-                    }
-                    
                     // 更新标题 - 显示具体合约和周期信息
                     if (indicatorsTitle) {
                         const periodName = {
@@ -3069,8 +3068,16 @@
                         indicatorsTitle.textContent = `📊 技术指标分析 - ${symbolName}(${symbol.toUpperCase()}) [${periodName}]`;
                     }
                     
-                    // 绘制默认指标图表 (MACD)
-                    drawIndicatorChart('macd', data);
+                    // 显示控制按钮先
+                    const controlsDiv = document.getElementById('indicators-controls');
+                    if (controlsDiv) {
+                        controlsDiv.style.display = 'block';
+                    }
+                    
+                    // 绘制当前选中的指标图表，如果没有选中则默认MACD
+                    const activeIndicator = getActiveIndicatorType();
+                    console.log(`🎯 当前激活指标: ${activeIndicator}`);
+                    drawIndicatorChart(activeIndicator, data);
                     
                     // 显示综合信号
                     displaySignalsSummary(data.signals);
@@ -3366,6 +3373,21 @@
             
             contentDiv.innerHTML = signalsHtml;
             summaryDiv.style.display = 'block';
+        }
+        
+        // 获取当前激活的指标类型
+        function getActiveIndicatorType() {
+            // 在技术指标控制区域内查找激活的按钮
+            const indicatorControls = document.getElementById('indicators-controls');
+            if (indicatorControls) {
+                const activeButton = indicatorControls.querySelector('.btn-chart-type.active');
+                if (activeButton) {
+                    const buttonId = activeButton.id;
+                    // 从按钮ID中提取指标类型 (例如: btn-macd -> macd)
+                    return buttonId.replace('btn-', '');
+                }
+            }
+            return 'macd'; // 默认返回MACD
         }
         
         // 获取信号样式类
