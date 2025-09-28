@@ -3039,13 +3039,13 @@ def main():
     
     # 启动服务器
     print("🚀 启动演示服务器...")
-    print("📊 Web界面地址: http://localhost:5014")
+    print("📊 Web界面地址: http://localhost:5016")
     print("🔄 实时数据: WebSocket连接")
     print("💻 支持功能: 市场数据、策略状态、回测系统、配置管理")
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5035, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5016, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:

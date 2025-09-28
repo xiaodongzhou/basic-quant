@@ -1148,6 +1148,7 @@
         });
         
         function selectTask(taskId) {
+            console.log('🎯 选择任务:', taskId);
             selectedTaskId = taskId;
             
             // 更新任务选择状态
@@ -1157,12 +1158,19 @@
             const selectedTask = document.querySelector(`[data-task-id="${taskId}"]`);
             if (selectedTask) {
                 selectedTask.classList.add('selected');
+                console.log('✅ 任务选中成功:', {
+                    taskId: taskId,
+                    symbol: selectedTask.dataset.symbol,
+                    symbolName: selectedTask.dataset.symbolName,
+                    period: selectedTask.dataset.period
+                });
             }
             
             // 显示对应的图表
             loadLiveChart(taskId);
             
             // 加载对应合约的技术指标
+            console.log('🔄 触发技术指标更新...');
             loadTechnicalIndicators();
         }
         
@@ -2885,11 +2893,11 @@
                 const firstTask = document.querySelector('.task-item[data-task-id]');
                 if (firstTask && !selectedTaskId) {
                     const taskId = firstTask.dataset.taskId;
-                    selectTask(taskId);
+                    selectTask(taskId); // 这里已经会调用 loadTechnicalIndicators()
+                } else {
+                    // 如果没有任务，加载默认技术指标
+                    loadTechnicalIndicators();
                 }
-                
-                // 默认加载技术指标
-                loadTechnicalIndicators();
             }, 500);
         });
         
@@ -2929,27 +2937,105 @@
         
         // 刷新技术指标
         function refreshIndicators() {
-            console.log('🔄 刷新技术指标');
+            console.log('🔄 手动刷新技术指标');
+            debugCurrentSelection(); // 调试当前选择状态
             loadTechnicalIndicators();
+        }
+        
+        // 调试当前选择状态
+        function debugCurrentSelection() {
+            console.log('🔍 ====== 当前选择状态调试 ======');
+            
+            // 检查选中的任务
+            const selectedTask = document.querySelector('.task-item.selected');
+            if (selectedTask) {
+                console.log('✅ 选中任务:', {
+                    taskId: selectedTask.dataset.taskId,
+                    symbol: selectedTask.dataset.symbol,
+                    symbolName: selectedTask.dataset.symbolName,
+                    period: selectedTask.dataset.period
+                });
+            } else {
+                console.log('❌ 没有选中任务');
+            }
+            
+            // 检查合约选择器
+            const contractSelect = document.getElementById('contract-select');
+            if (contractSelect) {
+                console.log('📋 主合约选择器:', contractSelect.value);
+            }
+            
+            // 检查回测合约选择器
+            const backtestContractSelect = document.getElementById('backtest-contract-select');
+            if (backtestContractSelect) {
+                console.log('📋 回测合约选择器:', backtestContractSelect.value);
+            }
+            
+            // 检查周期选择器
+            const backtestPeriodSelect = document.getElementById('backtest-period-select');
+            if (backtestPeriodSelect) {
+                console.log('⏰ 回测周期选择器:', backtestPeriodSelect.value);
+            }
+            
+            console.log('🔍 ============================');
         }
         
         // 加载技术指标数据
         async function loadTechnicalIndicators() {
+            console.log('🚀 开始加载技术指标...');
+            debugCurrentSelection(); // 调试当前选择状态
+            
             try {
-                // 获取当前选中的合约（如果有的话）
+                // 获取当前选中的合约（优先级：选中任务 > 回测合约选择器 > 主合约选择器 > 默认）
                 let symbol = 'rb2405'; // 默认合约
+                let symbolName = '螺纹钢';
+                let period = '1h';
+                let dataSource = '默认';
+                
+                // 优先级1：检查选中的任务
                 const selectedTask = document.querySelector('.task-item.selected');
                 if (selectedTask && selectedTask.dataset.symbol) {
                     symbol = selectedTask.dataset.symbol;
+                    symbolName = selectedTask.dataset.symbolName || symbol; // data-symbol-name -> dataset.symbolName
+                    period = selectedTask.dataset.period || '1h';
+                    dataSource = '选中任务';
+                    console.log(`📊 [优先级1] 从选中任务获取合约: ${symbol} (${symbolName}), 周期: ${period}`);
                 } else {
-                    // 尝试从合约选择器获取
-                    const contractSelect = document.getElementById('contract-select');
-                    if (contractSelect && contractSelect.value) {
-                        symbol = contractSelect.value;
+                    // 优先级2：检查回测合约选择器
+                    const backtestContractSelect = document.getElementById('backtest-contract-select');
+                    if (backtestContractSelect && backtestContractSelect.value) {
+                        symbol = backtestContractSelect.value;
+                        dataSource = '回测合约选择器';
+                        // 尝试获取选择器中的名称
+                        const selectedOption = backtestContractSelect.selectedOptions[0];
+                        if (selectedOption) {
+                            symbolName = selectedOption.textContent || symbol;
+                        }
+                        // 同时获取回测周期选择器的值
+                        const backtestPeriodSelect = document.getElementById('backtest-period-select');
+                        if (backtestPeriodSelect && backtestPeriodSelect.value) {
+                            period = backtestPeriodSelect.value;
+                        }
+                        console.log(`📊 [优先级2] 从回测合约选择器获取: ${symbol} (${symbolName}), 周期: ${period}`);
+                    } else {
+                        // 优先级3：检查主合约选择器
+                        const contractSelect = document.getElementById('contract-select');
+                        if (contractSelect && contractSelect.value) {
+                            symbol = contractSelect.value;
+                            dataSource = '主合约选择器';
+                            // 尝试获取选择器中的名称
+                            const selectedOption = contractSelect.selectedOptions[0];
+                            if (selectedOption) {
+                                symbolName = selectedOption.textContent || symbol;
+                            }
+                            console.log(`📊 [优先级3] 从主合约选择器获取: ${symbol} (${symbolName})`);
+                        } else {
+                            console.log(`📊 [优先级4] 使用默认合约: ${symbol} (${symbolName})`);
+                        }
                     }
                 }
                 
-                console.log(`📊 加载技术指标: ${symbol}`);
+                console.log(`📊 加载技术指标 - 数据源: ${dataSource}, 合约: ${symbol}, 名称: ${symbolName}, 周期: ${period}`);
                 
                 // 显示加载状态
                 const indicatorsTitle = document.getElementById('indicators-title');
@@ -2957,8 +3043,11 @@
                     indicatorsTitle.textContent = '📊 技术指标分析 (加载中...)';
                 }
                 
-                // 调用API获取技术指标数据
-                const response = await fetch(`/api/futures/technical_indicators?symbol=${symbol}&period=1h&limit=100&indicators=macd,rsi,kdj,bollinger`);
+                // 调用API获取技术指标数据 - 使用动态周期
+                const apiUrl = `/api/futures/technical_indicators?symbol=${symbol}&period=${period}&limit=100&indicators=macd,rsi,kdj,bollinger`;
+                console.log(`🌐 API调用: ${apiUrl}`);
+                
+                const response = await fetch(apiUrl);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -2971,9 +3060,13 @@
                         controlsDiv.style.display = 'block';
                     }
                     
-                    // 更新标题
+                    // 更新标题 - 显示具体合约和周期信息
                     if (indicatorsTitle) {
-                        indicatorsTitle.textContent = `📊 技术指标分析 - ${symbol.toUpperCase()}`;
+                        const periodName = {
+                            '5m': '5分钟', '15m': '15分钟', '30m': '30分钟', 
+                            '1h': '1小时', '1d': '日线'
+                        }[period] || period;
+                        indicatorsTitle.textContent = `📊 技术指标分析 - ${symbolName}(${symbol.toUpperCase()}) [${periodName}]`;
                     }
                     
                     // 绘制默认指标图表 (MACD)
@@ -3285,6 +3378,44 @@
             }
             return 'neutral';
         }
+        
+        // ========== 合约选择器事件监听 ==========
+        // 为合约选择器添加变化事件监听
+        document.addEventListener('DOMContentLoaded', function() {
+            // 监听合约选择器变化
+            const contractSelect = document.getElementById('contract-select');
+            if (contractSelect) {
+                contractSelect.addEventListener('change', function() {
+                    console.log('🔄 合约选择器变化:', this.value);
+                    // 当合约选择器变化时，立即刷新技术指标
+                    if (this.value) {
+                        loadTechnicalIndicators();
+                    }
+                });
+            }
+            
+            // 监听回测合约选择器变化 (如果存在)
+            const backtestContractSelect = document.getElementById('backtest-contract-select');
+            if (backtestContractSelect) {
+                backtestContractSelect.addEventListener('change', function() {
+                    console.log('🔄 回测合约选择器变化:', this.value);
+                    // 回测合约选择器变化时也可以触发指标更新
+                    if (this.value) {
+                        loadTechnicalIndicators();
+                    }
+                });
+            }
+            
+            // 监听周期选择器变化
+            const periodSelects = document.querySelectorAll('#backtest-period-select, select[name*="period"]');
+            periodSelects.forEach(select => {
+                select.addEventListener('change', function() {
+                    console.log('🔄 周期选择器变化:', this.value);
+                    // 周期变化时刷新技术指标
+                    loadTechnicalIndicators();
+                });
+            });
+        });
     </script>
 </body>
 </html>
