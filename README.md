@@ -1,14 +1,34 @@
-# VN.PY 量化交易系统
+# 🚀 VN.PY 量化交易系统 v2.0
 
-基于 VN.PY 框架构建的完整量化交易系统，支持策略开发、回测分析、风险控制和实盘交易。
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/xiaodongzhou/basic-quant/releases/tag/v2.0.0)
+[![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)](https://5035-iqwt7pakk30j34exwvp41-6532622b.e2b.dev)
 
-## 🚀 主要特性
+**专业的期货量化交易系统** - 基于VN.PY框架构建，集成真实市场数据、中式交易界面、动态合约选择等功能。
 
-### 📊 数据管理
-- **多数据源支持**: Binance、Yahoo Finance、CSV文件
-- **数据存储**: SQLite、MongoDB、Redis缓存  
-- **实时数据**: WebSocket实时行情推送
-- **数据下载**: 自动下载和更新历史数据
+🌐 **在线演示**: https://5035-iqwt7pakk30j34exwvp41-6532622b.e2b.dev  
+📚 **完整文档**: [项目结构说明](PROJECT_STRUCTURE_GUIDE.md) | [版本发布总结](V2_0_MAJOR_RELEASE_SUMMARY.md) | [发展路线图](NEXT_PHASE_ROADMAP.md)
+
+## ✨ v2.0 核心功能亮点
+
+### 🎯 **生产级功能** (v2.0 全新升级)
+- 🔴 **中式蜡烛图**: 红涨绿跌，符合中国期货市场习惯
+- 📊 **真实市场数据**: AKShare集成，替代模拟数据
+- 🔄 **动态合约选择**: 智能主力合约识别，两级选择UI
+- 📏 **智能Y轴缩放**: 品种自适应价格单位显示
+- ⚡ **实时数据流**: WebSocket + AKShare实时推送
+- 📈 **增强回测系统**: 多周期真实历史数据分析
+
+### 📊 **支持品种** (13个主要期货)
+- 🏭 **商品期货**: 螺纹钢、沪铜、沪铝、铁矿石、焦炭、焦煤、热卷  
+- 🥇 **贵金属**: 沪镍、沪锌、沪锡、沪铅、沪银、沪金
+
+### 🔧 **数据管理**
+- **AKShare数据源**: 专业期货数据接口
+- **多周期支持**: 5分钟、15分钟、30分钟、1小时、日线
+- **实时推送**: WebSocket实时行情数据
+- **智能映射**: 动态合约代码到数据源映射
 
 ### 🧠 策略框架
 - **基础策略类**: 完整的策略开发框架
