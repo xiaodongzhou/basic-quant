@@ -1610,13 +1610,53 @@
             
             const contractLower = contract.toLowerCase();
             
-            // 商品期货 - 元/吨
+            // 商品期货 - 黑色系 (元/吨)
             if (contractLower.startsWith('rb')) return '价格 (元/吨)'; // 螺纹钢
-            if (contractLower.startsWith('cu')) return '价格 (元/吨)'; // 沪铜
-            if (contractLower.startsWith('al')) return '价格 (元/吨)'; // 沪铝
             if (contractLower.startsWith('i')) return '价格 (元/吨)';  // 铁矿石
             if (contractLower.startsWith('j')) return '价格 (元/吨)';  // 焦炭
+            if (contractLower.startsWith('jm')) return '价格 (元/吨)'; // 焦煤
             if (contractLower.startsWith('hc')) return '价格 (元/吨)'; // 热卷
+            
+            // 有色金属 (元/吨)
+            if (contractLower.startsWith('cu')) return '价格 (元/吨)'; // 沪铜
+            if (contractLower.startsWith('al')) return '价格 (元/吨)'; // 沪铝
+            if (contractLower.startsWith('ni')) return '价格 (元/吨)'; // 沪镍
+            if (contractLower.startsWith('zn')) return '价格 (元/吨)'; // 沪锌
+            if (contractLower.startsWith('sn')) return '价格 (元/吨)'; // 沪锡
+            if (contractLower.startsWith('pb')) return '价格 (元/吨)'; // 沪铅
+            
+            // 贵金属
+            if (contractLower.startsWith('ag')) return '价格 (元/千克)'; // 沪银
+            if (contractLower.startsWith('au')) return '价格 (元/克)';   // 沪金
+            
+            // 股指期货 (点)
+            if (contractLower.startsWith('if')) return '价格 (点)';     // 沪深300
+            if (contractLower.startsWith('ic')) return '价格 (点)';     // 中证500
+            if (contractLower.startsWith('ih')) return '价格 (点)';     // 上证50
+            if (contractLower.startsWith('im')) return '价格 (点)';     // 中证1000
+            
+            // 农产品期货 (元/吨)
+            if (contractLower.startsWith('a')) return '价格 (元/吨)';   // 大豆1号
+            if (contractLower.startsWith('b')) return '价格 (元/吨)';   // 大豆2号
+            if (contractLower.startsWith('c')) return '价格 (元/吨)';   // 玉米
+            if (contractLower.startsWith('m')) return '价格 (元/吨)';   // 豆粕
+            if (contractLower.startsWith('y')) return '价格 (元/吨)';   // 豆油
+            if (contractLower.startsWith('p')) return '价格 (元/吨)';   // 棕榈油
+            if (contractLower.startsWith('sr')) return '价格 (元/吨)';  // 白糖
+            if (contractLower.startsWith('cf')) return '价格 (元/吨)';  // 棉花
+            if (contractLower.startsWith('rm')) return '价格 (元/吨)';  // 菜粕
+            if (contractLower.startsWith('oi')) return '价格 (元/吨)';  // 菜籽油
+            
+            // 能源化工
+            if (contractLower.startsWith('sc')) return '价格 (元/桶)';  // 原油
+            if (contractLower.startsWith('pta')) return '价格 (元/吨)'; // PTA
+            if (contractLower.startsWith('ma')) return '价格 (元/吨)';  // 甲醇
+            if (contractLower.startsWith('eg')) return '价格 (元/吨)';  // 乙二醇
+            if (contractLower.startsWith('pp')) return '价格 (元/吨)';  // 聚丙烯
+            if (contractLower.startsWith('v')) return '价格 (元/吨)';   // PVC
+            if (contractLower.startsWith('l')) return '价格 (元/吨)';   // 聚乙烯
+            if (contractLower.startsWith('bu')) return '价格 (元/吨)';  // 沥青
+            if (contractLower.startsWith('fu')) return '价格 (元/吨)';  // 燃料油
             
             // 默认返回通用标题
             return '价格';

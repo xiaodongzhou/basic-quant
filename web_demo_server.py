@@ -770,19 +770,53 @@ def get_futures_kline_data():
             
             # 品种到AKShare主力合约的映射
             variety_to_akshare = {
+                # 商品期货 - 黑色系
                 'rb': 'RB0',    # 螺纹钢主力
-                'cu': 'CU0',    # 沪铜主力  
-                'al': 'AL0',    # 沪铝主力
                 'i': 'I0',      # 铁矿石主力
                 'j': 'J0',      # 焦炭主力
                 'jm': 'JM0',    # 焦煤主力
                 'hc': 'HC0',    # 热卷主力
+                
+                # 商品期货 - 有色金属
+                'cu': 'CU0',    # 沪铜主力  
+                'al': 'AL0',    # 沪铝主力
                 'ni': 'NI0',    # 沪镍主力
                 'zn': 'ZN0',    # 沪锌主力
                 'sn': 'SN0',    # 沪锡主力
                 'pb': 'PB0',    # 沪铅主力
+                
+                # 贵金属
                 'ag': 'AG0',    # 沪银主力
                 'au': 'AU0',    # 沪金主力
+                
+                # 股指期货 (新增)
+                'if': 'IF0',    # 沪深300指数期货主力
+                'ic': 'IC0',    # 中证500指数期货主力
+                'ih': 'IH0',    # 上证50指数期货主力
+                'im': 'IM0',    # 中证1000指数期货主力
+                
+                # 农产品期货 (新增)
+                'a': 'A0',      # 大豆1号主力
+                'b': 'B0',      # 大豆2号主力
+                'c': 'C0',      # 玉米主力
+                'm': 'M0',      # 豆粕主力
+                'y': 'Y0',      # 豆油主力
+                'p': 'P0',      # 棕榈油主力
+                'sr': 'SR0',    # 白糖主力
+                'cf': 'CF0',    # 棉花主力
+                'rm': 'RM0',    # 菜粕主力
+                'oi': 'OI0',    # 菜籽油主力
+                
+                # 能源化工 (新增) 
+                'sc': 'SC0',    # 原油主力
+                'pta': 'PTA0',  # PTA主力
+                'ma': 'MA0',    # 甲醇主力
+                'eg': 'EG0',    # 乙二醇主力
+                'pp': 'PP0',    # 聚丙烯主力
+                'v': 'V0',      # PVC主力
+                'l': 'L0',      # 聚乙烯主力
+                'bu': 'BU0',    # 沥青主力
+                'fu': 'FU0',    # 燃料油主力
             }
             
             # 从合约代码中提取品种（字母部分）
@@ -891,19 +925,53 @@ def get_historical_data():
             
             # 品种到AKShare主力合约的映射
             variety_to_akshare = {
+                # 商品期货 - 黑色系
                 'rb': 'RB0',    # 螺纹钢主力
-                'cu': 'CU0',    # 沪铜主力  
-                'al': 'AL0',    # 沪铝主力
                 'i': 'I0',      # 铁矿石主力
                 'j': 'J0',      # 焦炭主力
                 'jm': 'JM0',    # 焦煤主力
                 'hc': 'HC0',    # 热卷主力
+                
+                # 商品期货 - 有色金属
+                'cu': 'CU0',    # 沪铜主力  
+                'al': 'AL0',    # 沪铝主力
                 'ni': 'NI0',    # 沪镍主力
                 'zn': 'ZN0',    # 沪锌主力
                 'sn': 'SN0',    # 沪锡主力
                 'pb': 'PB0',    # 沪铅主力
+                
+                # 贵金属
                 'ag': 'AG0',    # 沪银主力
                 'au': 'AU0',    # 沪金主力
+                
+                # 股指期货 (新增)
+                'if': 'IF0',    # 沪深300指数期货主力
+                'ic': 'IC0',    # 中证500指数期货主力
+                'ih': 'IH0',    # 上证50指数期货主力
+                'im': 'IM0',    # 中证1000指数期货主力
+                
+                # 农产品期货 (新增)
+                'a': 'A0',      # 大豆1号主力
+                'b': 'B0',      # 大豆2号主力
+                'c': 'C0',      # 玉米主力
+                'm': 'M0',      # 豆粕主力
+                'y': 'Y0',      # 豆油主力
+                'p': 'P0',      # 棕榈油主力
+                'sr': 'SR0',    # 白糖主力
+                'cf': 'CF0',    # 棉花主力
+                'rm': 'RM0',    # 菜粕主力
+                'oi': 'OI0',    # 菜籽油主力
+                
+                # 能源化工 (新增) 
+                'sc': 'SC0',    # 原油主力
+                'pta': 'PTA0',  # PTA主力
+                'ma': 'MA0',    # 甲醇主力
+                'eg': 'EG0',    # 乙二醇主力
+                'pp': 'PP0',    # 聚丙烯主力
+                'v': 'V0',      # PVC主力
+                'l': 'L0',      # 聚乙烯主力
+                'bu': 'BU0',    # 沥青主力
+                'fu': 'FU0',    # 燃料油主力
             }
             
             # 从合约代码中提取品种（字母部分）
@@ -1056,13 +1124,53 @@ def get_futures_contracts():
         
         # 品种映射配置
         variety_config = {
+            # 商品期货 - 黑色系
             'rb': {'name': '螺纹钢', 'exchange': 'SHFE'},
-            'cu': {'name': '沪铜', 'exchange': 'SHFE'}, 
-            'al': {'name': '沪铝', 'exchange': 'SHFE'},
             'i': {'name': '铁矿石', 'exchange': 'DCE'},
             'j': {'name': '焦炭', 'exchange': 'DCE'},
             'jm': {'name': '焦煤', 'exchange': 'DCE'},
-            'hc': {'name': '热卷', 'exchange': 'SHFE'}
+            'hc': {'name': '热卷', 'exchange': 'SHFE'},
+            
+            # 商品期货 - 有色金属
+            'cu': {'name': '沪铜', 'exchange': 'SHFE'},
+            'al': {'name': '沪铝', 'exchange': 'SHFE'},
+            'ni': {'name': '沪镍', 'exchange': 'SHFE'},
+            'zn': {'name': '沪锌', 'exchange': 'SHFE'},
+            'sn': {'name': '沪锡', 'exchange': 'SHFE'},
+            'pb': {'name': '沪铅', 'exchange': 'SHFE'},
+            
+            # 贵金属
+            'ag': {'name': '沪银', 'exchange': 'SHFE'},
+            'au': {'name': '沪金', 'exchange': 'SHFE'},
+            
+            # 股指期货 (新增)
+            'if': {'name': '沪深300', 'exchange': 'CFFEX'},
+            'ic': {'name': '中证500', 'exchange': 'CFFEX'},
+            'ih': {'name': '上证50', 'exchange': 'CFFEX'},
+            'im': {'name': '中证1000', 'exchange': 'CFFEX'},
+            
+            # 农产品期货 (新增)
+            'a': {'name': '大豆1号', 'exchange': 'DCE'},
+            'b': {'name': '大豆2号', 'exchange': 'DCE'},
+            'c': {'name': '玉米', 'exchange': 'DCE'},
+            'm': {'name': '豆粕', 'exchange': 'DCE'},
+            'y': {'name': '豆油', 'exchange': 'DCE'},
+            'p': {'name': '棕榈油', 'exchange': 'DCE'},
+            'sr': {'name': '白糖', 'exchange': 'CZCE'},
+            'cf': {'name': '棉花', 'exchange': 'CZCE'},
+            'rm': {'name': '菜粕', 'exchange': 'CZCE'},
+            'oi': {'name': '菜籽油', 'exchange': 'CZCE'},
+            
+            # 能源化工 (新增)
+            'sc': {'name': '原油', 'exchange': 'INE'},
+            'pta': {'name': 'PTA', 'exchange': 'CZCE'},
+            'ma': {'name': '甲醇', 'exchange': 'CZCE'},
+            'eg': {'name': '乙二醇', 'exchange': 'DCE'},
+            'pp': {'name': '聚丙烯', 'exchange': 'DCE'},
+            'v': {'name': 'PVC', 'exchange': 'DCE'},
+            'l': {'name': '聚乙烯', 'exchange': 'DCE'},
+            'bu': {'name': '沥青', 'exchange': 'SHFE'},
+            'fu': {'name': '燃料油', 'exchange': 'SHFE'}
         }
         
         if variety:
