@@ -1154,10 +1154,16 @@
             document.querySelectorAll('.task-item').forEach(item => {
                 item.classList.remove('selected');
             });
-            document.querySelector(`[data-task-id="${taskId}"]`).classList.add('selected');
+            const selectedTask = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (selectedTask) {
+                selectedTask.classList.add('selected');
+            }
             
             // 显示对应的图表
             loadLiveChart(taskId);
+            
+            // 加载对应合约的技术指标
+            loadTechnicalIndicators();
         }
         
         // ========== 任务控制功能 ==========
@@ -2881,8 +2887,404 @@
                     const taskId = firstTask.dataset.taskId;
                     selectTask(taskId);
                 }
+                
+                // 默认加载技术指标
+                loadTechnicalIndicators();
             }, 500);
         });
+        
+        // ========== 技术指标功能 ==========
+        
+        let currentIndicatorData = null;
+        let indicatorCharts = {};
+        
+        // 切换指标显示
+        function toggleIndicator(indicatorType) {
+            console.log(`切换技术指标: ${indicatorType}`);
+            
+            // 更新按钮状态
+            document.querySelectorAll('.btn-chart-type').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`btn-${indicatorType}`).classList.add('active');
+            
+            // 显示/隐藏图表容器
+            const containers = ['macd-chart-container', 'rsi-chart-container', 'kdj-chart-container', 'bollinger-chart-container'];
+            containers.forEach(containerId => {
+                const container = document.getElementById(containerId);
+                if (container) {
+                    if (containerId === `${indicatorType}-chart-container`) {
+                        container.style.display = 'block';
+                    } else {
+                        container.style.display = 'none';
+                    }
+                }
+            });
+            
+            // 如果有数据，重新绘制图表
+            if (currentIndicatorData) {
+                drawIndicatorChart(indicatorType, currentIndicatorData);
+            }
+        }
+        
+        // 刷新技术指标
+        function refreshIndicators() {
+            console.log('🔄 刷新技术指标');
+            loadTechnicalIndicators();
+        }
+        
+        // 加载技术指标数据
+        async function loadTechnicalIndicators() {
+            try {
+                // 获取当前选中的合约（如果有的话）
+                let symbol = 'rb2405'; // 默认合约
+                const selectedTask = document.querySelector('.task-item.selected');
+                if (selectedTask && selectedTask.dataset.symbol) {
+                    symbol = selectedTask.dataset.symbol;
+                } else {
+                    // 尝试从合约选择器获取
+                    const contractSelect = document.getElementById('contract-select');
+                    if (contractSelect && contractSelect.value) {
+                        symbol = contractSelect.value;
+                    }
+                }
+                
+                console.log(`📊 加载技术指标: ${symbol}`);
+                
+                // 显示加载状态
+                const indicatorsTitle = document.getElementById('indicators-title');
+                if (indicatorsTitle) {
+                    indicatorsTitle.textContent = '📊 技术指标分析 (加载中...)';
+                }
+                
+                // 调用API获取技术指标数据
+                const response = await fetch(`/api/futures/technical_indicators?symbol=${symbol}&period=1h&limit=100&indicators=macd,rsi,kdj,bollinger`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ 技术指标数据获取成功', data);
+                    currentIndicatorData = data;
+                    
+                    // 显示控制按钮
+                    const controlsDiv = document.getElementById('indicators-controls');
+                    if (controlsDiv) {
+                        controlsDiv.style.display = 'block';
+                    }
+                    
+                    // 更新标题
+                    if (indicatorsTitle) {
+                        indicatorsTitle.textContent = `📊 技术指标分析 - ${symbol.toUpperCase()}`;
+                    }
+                    
+                    // 绘制默认指标图表 (MACD)
+                    drawIndicatorChart('macd', data);
+                    
+                    // 显示综合信号
+                    displaySignalsSummary(data.signals);
+                    
+                } else {
+                    console.error('❌ 技术指标数据获取失败:', data.message);
+                    if (indicatorsTitle) {
+                        indicatorsTitle.textContent = '📊 技术指标分析 (数据获取失败)';
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ 技术指标加载错误:', error);
+                const indicatorsTitle = document.getElementById('indicators-title');
+                if (indicatorsTitle) {
+                    indicatorsTitle.textContent = '📊 技术指标分析 (网络错误)';
+                }
+            }
+        }
+        
+        // 绘制指标图表
+        function drawIndicatorChart(indicatorType, data) {
+            const chartId = `${indicatorType}Chart`;
+            const canvas = document.getElementById(chartId);
+            const signalsDiv = document.getElementById(`${indicatorType}-signals`);
+            
+            if (!canvas) {
+                console.error(`❌ 找不到图表canvas: ${chartId}`);
+                return;
+            }
+            
+            // 销毁旧图表
+            if (indicatorCharts[indicatorType]) {
+                indicatorCharts[indicatorType].destroy();
+            }
+            
+            const ctx = canvas.getContext('2d');
+            const indicators = data.indicators;
+            const timestamps = data.price_data.timestamps;
+            
+            let chartConfig = {};
+            
+            switch (indicatorType) {
+                case 'macd':
+                    if (indicators.macd) {
+                        chartConfig = {
+                            type: 'line',
+                            data: {
+                                labels: timestamps.slice(-50), // 只显示最近50个点
+                                datasets: [{
+                                    label: 'DIF',
+                                    data: indicators.macd.dif.slice(-50),
+                                    borderColor: '#4299e1',
+                                    backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                }, {
+                                    label: 'DEA',
+                                    data: indicators.macd.dea.slice(-50),
+                                    borderColor: '#ed8936',
+                                    backgroundColor: 'rgba(237, 131, 54, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                }, {
+                                    label: 'MACD柱',
+                                    data: indicators.macd.histogram.slice(-50),
+                                    type: 'bar',
+                                    backgroundColor: indicators.macd.histogram.slice(-50).map(val => val >= 0 ? 'rgba(72, 187, 120, 0.6)' : 'rgba(245, 101, 101, 0.6)'),
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: getIndicatorChartOptions('MACD指标')
+                        };
+                    }
+                    break;
+                
+                case 'rsi':
+                    if (indicators.rsi) {
+                        chartConfig = {
+                            type: 'line',
+                            data: {
+                                labels: timestamps.slice(-50),
+                                datasets: [{
+                                    label: 'RSI',
+                                    data: indicators.rsi.values.slice(-50),
+                                    borderColor: '#ed8936',
+                                    backgroundColor: 'rgba(237, 131, 54, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                }]
+                            },
+                            options: {
+                                ...getIndicatorChartOptions('RSI指标'),
+                                plugins: {
+                                    ...getIndicatorChartOptions('RSI指标').plugins,
+                                    annotation: {
+                                        annotations: {
+                                            overbought: {
+                                                type: 'line',
+                                                yMin: 70,
+                                                yMax: 70,
+                                                borderColor: 'rgba(245, 101, 101, 0.8)',
+                                                borderWidth: 1,
+                                                borderDash: [5, 5]
+                                            },
+                                            oversold: {
+                                                type: 'line',
+                                                yMin: 30,
+                                                yMax: 30,
+                                                borderColor: 'rgba(72, 187, 120, 0.8)',
+                                                borderWidth: 1,
+                                                borderDash: [5, 5]
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    ...getIndicatorChartOptions('RSI指标').scales,
+                                    y: {
+                                        min: 0,
+                                        max: 100,
+                                        grid: { color: 'rgba(0,0,0,0.1)' },
+                                        ticks: { font: { size: 10 } }
+                                    }
+                                }
+                            }
+                        };
+                    }
+                    break;
+                
+                case 'kdj':
+                    if (indicators.kdj) {
+                        chartConfig = {
+                            type: 'line',
+                            data: {
+                                labels: timestamps.slice(-50),
+                                datasets: [{
+                                    label: 'K线',
+                                    data: indicators.kdj.k.slice(-50),
+                                    borderColor: '#4299e1',
+                                    borderWidth: 2,
+                                    fill: false
+                                }, {
+                                    label: 'D线',
+                                    data: indicators.kdj.d.slice(-50),
+                                    borderColor: '#ed8936',
+                                    borderWidth: 2,
+                                    fill: false
+                                }, {
+                                    label: 'J线',
+                                    data: indicators.kdj.j.slice(-50),
+                                    borderColor: '#38b2ac',
+                                    borderWidth: 2,
+                                    fill: false
+                                }]
+                            },
+                            options: {
+                                ...getIndicatorChartOptions('KDJ指标'),
+                                scales: {
+                                    ...getIndicatorChartOptions('KDJ指标').scales,
+                                    y: {
+                                        min: 0,
+                                        max: 100,
+                                        grid: { color: 'rgba(0,0,0,0.1)' },
+                                        ticks: { font: { size: 10 } }
+                                    }
+                                }
+                            }
+                        };
+                    }
+                    break;
+                
+                case 'bollinger':
+                    if (indicators.bollinger) {
+                        const prices = data.price_data.close.slice(-50);
+                        chartConfig = {
+                            type: 'line',
+                            data: {
+                                labels: timestamps.slice(-50),
+                                datasets: [{
+                                    label: '价格',
+                                    data: prices,
+                                    borderColor: '#2d3748',
+                                    borderWidth: 2,
+                                    fill: false
+                                }, {
+                                    label: '上轨',
+                                    data: indicators.bollinger.upper.slice(-50),
+                                    borderColor: '#f56565',
+                                    backgroundColor: 'rgba(245, 101, 101, 0.1)',
+                                    borderWidth: 1,
+                                    fill: '+1'
+                                }, {
+                                    label: '中轨',
+                                    data: indicators.bollinger.middle.slice(-50),
+                                    borderColor: '#4299e1',
+                                    borderWidth: 1,
+                                    fill: false
+                                }, {
+                                    label: '下轨',
+                                    data: indicators.bollinger.lower.slice(-50),
+                                    borderColor: '#48bb78',
+                                    backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                                    borderWidth: 1,
+                                    fill: false
+                                }]
+                            },
+                            options: getIndicatorChartOptions('布林带指标')
+                        };
+                    }
+                    break;
+            }
+            
+            // 创建图表
+            if (Object.keys(chartConfig).length > 0) {
+                try {
+                    indicatorCharts[indicatorType] = new Chart(ctx, chartConfig);
+                    console.log(`✅ ${indicatorType.toUpperCase()}图表已创建`);
+                } catch (error) {
+                    console.error(`❌ ${indicatorType.toUpperCase()}图表创建失败:`, error);
+                }
+            }
+            
+            // 显示信号分析
+            if (signalsDiv && data.signals && data.signals[indicatorType]) {
+                signalsDiv.innerHTML = `
+                    <div style="font-size: 12px; color: #2d3748;">
+                        <strong>信号:</strong> ${data.signals[indicatorType]}
+                    </div>
+                `;
+                signalsDiv.style.display = 'block';
+            }
+        }
+        
+        // 获取指标图表通用配置
+        function getIndicatorChartOptions(title) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: false
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: { size: 11 },
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: false,
+                        grid: { display: false }
+                    },
+                    y: {
+                        grid: { color: 'rgba(0,0,0,0.1)' },
+                        ticks: { 
+                            font: { size: 10 },
+                            maxTicksLimit: 6
+                        }
+                    }
+                },
+                elements: {
+                    point: { radius: 0 }
+                },
+                interaction: {
+                    intersect: false
+                }
+            };
+        }
+        
+        // 显示综合信号分析
+        function displaySignalsSummary(signals) {
+            const summaryDiv = document.getElementById('signals-summary');
+            const contentDiv = document.getElementById('signals-content');
+            
+            if (!summaryDiv || !contentDiv || !signals) return;
+            
+            let signalsHtml = '';
+            Object.entries(signals).forEach(([indicator, signal]) => {
+                const signalClass = getSignalClass(signal);
+                signalsHtml += `
+                    <div class="signal-item ${signalClass}">
+                        <strong>${indicator.toUpperCase()}:</strong>
+                        <span>${signal}</span>
+                    </div>
+                `;
+            });
+            
+            contentDiv.innerHTML = signalsHtml;
+            summaryDiv.style.display = 'block';
+        }
+        
+        // 获取信号样式类
+        function getSignalClass(signal) {
+            const signalLower = signal.toLowerCase();
+            if (signalLower.includes('买入') || signalLower.includes('多头') || signalLower.includes('金叉') || signalLower.includes('超卖')) {
+                return 'bullish';
+            } else if (signalLower.includes('卖出') || signalLower.includes('空头') || signalLower.includes('死叉') || signalLower.includes('超买')) {
+                return 'bearish';
+            }
+            return 'neutral';
+        }
     </script>
 </body>
 </html>
