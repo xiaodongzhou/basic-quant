@@ -1313,28 +1313,35 @@ def get_technical_indicators():
             print(f"合约映射: {contract_code} -> {variety} -> {akshare_symbol}")
             return akshare_symbol
         
-        # 获取AKShare符号并获取数据
-        akshare_symbol = get_akshare_symbol(symbol)
-        
+        # 直接调用K线数据API获取相同的价格数据，确保数据一致性
         try:
-            # 获取期货数据
-            df = ak.futures_zh_minute_sina(symbol=akshare_symbol, period=period)
-            
-            if df is None or len(df) == 0:
-                raise Exception(f"未获取到{akshare_symbol}的数据")
-            
-            print(f"获取到{len(df)}条数据，数据时间范围: {df.index[0]} 到 {df.index[-1]}")
-            
-            # 限制数据量
-            if len(df) > limit:
-                df = df.tail(limit)
-            
-            # 确保数据列名正确
-            df.columns = ['open', 'high', 'low', 'close', 'volume']
-            
-            # 添加模拟成交量（如果没有）
-            if 'volume' not in df.columns or df['volume'].isna().all():
-                df['volume'] = np.random.randint(1000, 10000, len(df))
+            # 内部调用K线数据API
+            from flask import current_app
+            with current_app.test_request_context(f'/api/futures/kline_data?symbol={symbol}&period={period}&limit={limit}'):
+                kline_response = get_futures_kline_data()
+                kline_data = kline_response.get_json()
+                
+                if not kline_data.get('success'):
+                    raise Exception(f"获取K线数据失败: {kline_data.get('message', '未知错误')}")
+                
+                # 将K线数据转换为DataFrame供技术指标计算使用
+                kline_items = kline_data['data']['kline_data']
+                df_data = {
+                    'open': [item['open'] for item in kline_items],
+                    'high': [item['high'] for item in kline_items],
+                    'low': [item['low'] for item in kline_items],
+                    'close': [item['close'] for item in kline_items],
+                    'volume': [item['volume'] for item in kline_items]
+                }
+                
+                # 构建时间索引
+                timestamps = [pd.to_datetime(item['timestamp']) for item in kline_items]
+                df = pd.DataFrame(df_data, index=timestamps)
+                
+                print(f"✅ 使用K线API数据计算技术指标，数据点数: {len(df)}，时间范围: {df.index[0]} 到 {df.index[-1]}")
+                
+                # 记录数据源信息
+                akshare_symbol = kline_data['data'].get('symbol', symbol)
             
             # 计算选择的技术指标
             indicator_results = {}
@@ -1411,8 +1418,13 @@ def get_technical_indicators():
             
         except Exception as ak_error:
             print(f"AKShare数据获取失败: {str(ak_error)}")
-            # 降级到模拟数据
-            return generate_mock_technical_indicators(symbol, period, limit, indicators)
+            # 不再使用模拟数据，直接返回错误
+            return jsonify({
+                'success': False,
+                'message': f'无法获取真实数据: {str(ak_error)}',
+                'error_type': 'akshare_data_fetch_failed',
+                'timestamp': beijing_now().isoformat()
+            }), 500
             
     except Exception as e:
         print(f"获取技术指标失败: {str(e)}")
@@ -1423,99 +1435,7 @@ def get_technical_indicators():
         }), 500
 
 
-def generate_mock_technical_indicators(symbol, period, limit, indicators):
-    """生成模拟技术指标数据 - 用于演示"""
-    
-    try:
-        print(f"生成模拟技术指标数据: {symbol}")
-        
-        # 生成模拟价格数据
-        base_price = 3500 if symbol.lower().startswith('rb') else 1000
-        dates = pd.date_range(end=pd.Timestamp.now(), periods=limit, freq='H')
-        
-        # 生成随机价格走势
-        np.random.seed(42)
-        returns = np.random.normal(0.001, 0.02, limit)
-        prices = [base_price]
-        for ret in returns[1:]:
-            prices.append(prices[-1] * (1 + ret))
-        
-        # 构建DataFrame  
-        df = pd.DataFrame({
-            'open': np.array(prices) * np.random.uniform(0.995, 1.005, limit),
-            'high': np.array(prices) * np.random.uniform(1.000, 1.020, limit),
-            'low': np.array(prices) * np.random.uniform(0.980, 1.000, limit),
-            'close': prices,
-            'volume': np.random.randint(1000, 10000, limit)
-        }, index=dates)
-        
-        # 计算技术指标
-        indicator_results = {}
-        params = DEFAULT_INDICATOR_PARAMS.copy()
-        
-        if 'macd' in indicators:
-            macd_data = TechnicalIndicators.calculate_macd(df, **params['macd'])
-            if macd_data:
-                indicator_results['macd'] = macd_data
-        
-        if 'rsi' in indicators:
-            rsi_data = TechnicalIndicators.calculate_rsi(df, **params['rsi'])
-            if len(rsi_data) > 0:
-                indicator_results['rsi'] = rsi_data
-        
-        if 'kdj' in indicators:
-            kdj_data = TechnicalIndicators.calculate_kdj(df, **params['kdj'])
-            if kdj_data:
-                indicator_results['kdj'] = kdj_data
-        
-        if 'bollinger' in indicators:
-            bb_data = TechnicalIndicators.calculate_bollinger_bands(df, **params['bollinger'])
-            if bb_data:
-                indicator_results['bollinger'] = bb_data
-        
-        # 格式化指标数据
-        formatted_indicators = TechnicalIndicators.format_indicators_for_api(
-            indicator_results, data_length=limit
-        )
-        
-        # 生成信号分析
-        signals = get_signal_analysis(formatted_indicators)
-        
-        # 准备响应数据
-        timestamps = [dt.strftime('%Y-%m-%d %H:%M:%S') for dt in df.index]
-        
-        price_data = {
-            'timestamps': timestamps,
-            'open': df['open'].tolist(),
-            'high': df['high'].tolist(),
-            'low': df['low'].tolist(), 
-            'close': df['close'].tolist(),
-            'volume': df['volume'].tolist()
-        }
-        
-        response_data = {
-            'success': True,
-            'symbol': symbol,
-            'akshare_symbol': 'MOCK_DATA',
-            'period': period,
-            'data_count': len(timestamps),
-            'price_data': price_data,
-            'indicators': formatted_indicators,
-            'signals': signals,
-            'parameters': params,
-            'is_mock': True,
-            'timestamp': beijing_now().isoformat()
-        }
-        
-        return jsonify(response_data)
-        
-    except Exception as e:
-        print(f"生成模拟技术指标失败: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': f'生成模拟技术指标失败: {str(e)}',
-            'timestamp': beijing_now().isoformat()
-        }), 500
+# 模拟数据生成函数已删除 - 只使用真实数据
 
 
 @app.route('/api/strategy_library/list')
@@ -1617,25 +1537,14 @@ def get_strategy_signals():
                 df['volume'] = np.random.randint(1000, 10000, len(df))
                 
         except Exception as ak_error:
-            print(f"AKShare数据获取失败: {str(ak_error)}, 使用模拟数据")
-            
-            # 生成模拟数据
-            base_price = 3500 if symbol.lower().startswith('rb') else 1000
-            dates = pd.date_range(end=pd.Timestamp.now(), periods=limit, freq='H')
-            
-            np.random.seed(42)
-            returns = np.random.normal(0.001, 0.02, limit)
-            prices = [base_price]
-            for ret in returns[1:]:
-                prices.append(prices[-1] * (1 + ret))
-            
-            df = pd.DataFrame({
-                'open': np.array(prices) * np.random.uniform(0.995, 1.005, limit),
-                'high': np.array(prices) * np.random.uniform(1.000, 1.020, limit),
-                'low': np.array(prices) * np.random.uniform(0.980, 1.000, limit),
-                'close': prices,
-                'volume': np.random.randint(1000, 10000, limit)
-            }, index=dates)
+            print(f"AKShare数据获取失败: {str(ak_error)}")
+            # 不再使用模拟数据，直接返回错误
+            return jsonify({
+                'success': False,
+                'message': f'无法获取真实数据进行策略回测: {str(ak_error)}',
+                'error_type': 'akshare_data_fetch_failed',
+                'timestamp': beijing_now().isoformat()
+            }), 500
         
         # 生成策略信号
         signals = strategy.generate_signals(df)
@@ -1706,23 +1615,45 @@ def run_strategy_backtest():
                 'message': f'未找到策略: {strategy_id}'
             }), 404
         
-        # 生成回测数据（这里使用模拟数据，实际应用中应该使用历史数据）
-        dates = pd.date_range(start=start_date, end=end_date, freq='D')
-        base_price = 3500 if symbol.lower().startswith('rb') else 1000
-        
-        np.random.seed(hash(symbol) % 2**32)
-        returns = np.random.normal(0.0005, 0.015, len(dates))
-        prices = [base_price]
-        for ret in returns[1:]:
-            prices.append(prices[-1] * (1 + ret))
-        
-        df = pd.DataFrame({
-            'open': np.array(prices) * np.random.uniform(0.99, 1.01, len(dates)),
-            'high': np.array(prices) * np.random.uniform(1.00, 1.03, len(dates)),
-            'low': np.array(prices) * np.random.uniform(0.97, 1.00, len(dates)),
-            'close': prices,
-            'volume': np.random.randint(1000, 10000, len(dates))
-        }, index=dates)
+        # 获取真实历史数据进行回测
+        try:
+            # 动态映射合约代码到AKShare格式（与其他API保持一致）
+            def get_akshare_symbol(contract_code):
+                contract_lower = contract_code.lower()
+                variety_to_akshare = {
+                    'rb': 'RB0', 'cu': 'CU0', 'al': 'AL0', 'zn': 'ZN0', 'ni': 'NI0',
+                    'ag': 'AG0', 'au': 'AU0', 'i': 'I0', 'j': 'J0', 'jm': 'JM0'
+                }
+                import re
+                variety_match = re.match(r'^([a-zA-Z]+)', contract_code)
+                if variety_match:
+                    variety = variety_match.group(1).lower()
+                    return variety_to_akshare.get(variety, 'RB0')
+                return 'RB0'
+            
+            akshare_symbol = get_akshare_symbol(symbol)
+            
+            # 获取日线历史数据用于回测
+            df = ak.futures_zh_daily_sina(symbol=akshare_symbol)
+            if df is None or len(df) == 0:
+                raise Exception(f"未获取到{akshare_symbol}的历史数据")
+            
+            # 按日期范围筛选
+            start_dt = pd.to_datetime(start_date)
+            end_dt = pd.to_datetime(end_date)
+            df = df[(df.index >= start_dt) & (df.index <= end_dt)].copy()
+            
+            if len(df) == 0:
+                raise Exception(f"指定日期范围{start_date}到{end_date}没有数据")
+                
+        except Exception as ak_error:
+            print(f"获取真实历史数据失败: {str(ak_error)}")
+            return jsonify({
+                'success': False,
+                'message': f'无法获取真实历史数据进行回测: {str(ak_error)}',
+                'error_type': 'historical_data_fetch_failed',
+                'timestamp': beijing_now().isoformat()
+            }), 500
         
         # 运行回测
         metrics = strategy.backtest(df, initial_capital)
@@ -1812,23 +1743,40 @@ def compare_strategies():
         
         print(f"策略对比: {strategy_ids}, {symbol}, {days}天")
         
-        # 生成测试数据
-        dates = pd.date_range(end=pd.Timestamp.now(), periods=days, freq='D')
-        base_price = 3500 if symbol.lower().startswith('rb') else 1000
-        
-        np.random.seed(hash(symbol) % 2**32)
-        returns = np.random.normal(0.0005, 0.015, days)
-        prices = [base_price]
-        for ret in returns[1:]:
-            prices.append(prices[-1] * (1 + ret))
-        
-        df = pd.DataFrame({
-            'open': np.array(prices) * np.random.uniform(0.99, 1.01, days),
-            'high': np.array(prices) * np.random.uniform(1.00, 1.03, days),
-            'low': np.array(prices) * np.random.uniform(0.97, 1.00, days),
-            'close': prices,
-            'volume': np.random.randint(1000, 10000, days)
-        }, index=dates)
+        # 获取真实数据进行策略对比
+        try:
+            # 使用与其他API一致的AKShare数据获取逻辑
+            def get_akshare_symbol(contract_code):
+                contract_lower = contract_code.lower()
+                variety_to_akshare = {
+                    'rb': 'RB0', 'cu': 'CU0', 'al': 'AL0', 'zn': 'ZN0', 'ni': 'NI0',
+                    'ag': 'AG0', 'au': 'AU0', 'i': 'I0', 'j': 'J0', 'jm': 'JM0'
+                }
+                import re
+                variety_match = re.match(r'^([a-zA-Z]+)', contract_code)
+                if variety_match:
+                    variety = variety_match.group(1).lower()
+                    return variety_to_akshare.get(variety, 'RB0')
+                return 'RB0'
+            
+            akshare_symbol = get_akshare_symbol(symbol)
+            df = ak.futures_zh_daily_sina(symbol=akshare_symbol)
+            
+            if df is None or len(df) == 0:
+                raise Exception(f"未获取到{akshare_symbol}的数据")
+                
+            # 取最新的days天数据
+            df = df.tail(days).copy()
+            dates = df.index
+            
+        except Exception as ak_error:
+            print(f"获取真实数据失败: {str(ak_error)}")
+            return jsonify({
+                'success': False,
+                'message': f'无法获取真实数据进行策略对比: {str(ak_error)}',
+                'error_type': 'akshare_data_fetch_failed',
+                'timestamp': beijing_now().isoformat()
+            }), 500
         
         # 运行策略比较
         comparison_results = strategy_library.run_strategy_comparison(df, strategy_ids)
@@ -3039,13 +2987,13 @@ def main():
     
     # 启动服务器
     print("🚀 启动演示服务器...")
-    print("📊 Web界面地址: http://localhost:5014")
+    print("📊 Web界面地址: http://localhost:5021")
     print("🔄 实时数据: WebSocket连接")
     print("💻 支持功能: 市场数据、策略状态、回测系统、配置管理")
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5035, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5021, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:
