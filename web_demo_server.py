@@ -34,6 +34,8 @@ from core.backtest_engine import BacktestEngine, BacktestConfig, run_portfolio_b
 from core.strategy_portfolio_config import PortfolioConfig, StrategyConfig, StrategyAllocation, ConfigManager
 from core.multi_strategy_manager import StrategyAllocationMethod
 from core.technical_indicators import TechnicalIndicators, DEFAULT_INDICATOR_PARAMS, get_signal_analysis
+from core.strategy_library import strategy_library, format_signals_for_api, format_backtest_metrics_for_api
+from core.data_types import TradingSignalAction
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -1504,6 +1506,365 @@ def generate_mock_technical_indicators(symbol, period, limit, indicators):
         return jsonify({
             'success': False,
             'message': f'生成模拟技术指标失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+@app.route('/api/strategy_library/list')
+def get_strategy_library():
+    """获取策略库列表"""
+    
+    try:
+        strategies = strategy_library.list_strategies()
+        
+        return jsonify({
+            'success': True,
+            'strategies': strategies,
+            'total_count': len(strategies),
+            'timestamp': beijing_now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"获取策略库失败: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'获取策略库失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+@app.route('/api/strategy_library/signals')
+def get_strategy_signals():
+    """获取策略交易信号"""
+    
+    try:
+        # 获取请求参数
+        strategy_id = request.args.get('strategy_id', 'turtle_trading')
+        symbol = request.args.get('symbol', 'rb2405')
+        period = request.args.get('period', '1h')
+        limit = int(request.args.get('limit', 100))
+        
+        # 获取自定义参数（JSON格式）
+        custom_params = request.args.get('parameters')
+        parameters = None
+        if custom_params:
+            try:
+                parameters = json.loads(custom_params)
+            except json.JSONDecodeError:
+                logger.warning(f"无效的参数JSON: {custom_params}")
+        
+        print(f"策略信号分析: strategy={strategy_id}, symbol={symbol}, period={period}")
+        
+        # 获取策略实例
+        strategy = strategy_library.get_strategy(strategy_id, parameters)
+        if not strategy:
+            return jsonify({
+                'success': False,
+                'message': f'未找到策略: {strategy_id}',
+                'timestamp': beijing_now().isoformat()
+            }), 404
+        
+        # 获取历史数据（复用existing logic）
+        def get_akshare_symbol(contract_code):
+            contract_lower = contract_code.lower()
+            variety_to_akshare = {
+                'rb': 'RB0', 'i': 'I0', 'j': 'J0', 'jm': 'JM0', 'hc': 'HC0',
+                'cu': 'CU0', 'al': 'AL0', 'ni': 'NI0', 'zn': 'ZN0', 'sn': 'SN0', 'pb': 'PB0',
+                'ag': 'AG0', 'au': 'AU0',
+                'if': 'IF0', 'ic': 'IC0', 'ih': 'IH0', 'im': 'IM0', 
+                'a': 'A0', 'b': 'B0', 'c': 'C0', 'm': 'M0', 'y': 'Y0', 'p': 'P0',
+                'sr': 'SR0', 'cf': 'CF0', 'ta': 'TA0', 'rm': 'RM0', 'oi': 'OI0',
+                'sc': 'SC0', 'pta': 'PTA0', 'ma': 'MA0', 'l': 'L0', 'v': 'V0',
+                'pp': 'PP0', 'eg': 'EG0', 'eb': 'EB0', 'fu': 'FU0'
+            }
+            
+            variety = None
+            for v in sorted(variety_to_akshare.keys(), key=len, reverse=True):
+                if contract_lower.startswith(v):
+                    variety = v
+                    break
+            
+            return variety_to_akshare.get(variety, 'RB0')
+        
+        # 获取数据
+        akshare_symbol = get_akshare_symbol(symbol)
+        
+        try:
+            # 尝试获取真实数据
+            df = ak.futures_zh_minute_sina(symbol=akshare_symbol, period=period)
+            
+            if df is None or len(df) == 0:
+                raise Exception(f"未获取到{akshare_symbol}的数据")
+            
+            print(f"获取到{len(df)}条真实数据")
+            
+            # 限制数据量
+            if len(df) > limit:
+                df = df.tail(limit)
+            
+            df.columns = ['open', 'high', 'low', 'close', 'volume']
+            
+            # 添加模拟成交量
+            if 'volume' not in df.columns or df['volume'].isna().all():
+                df['volume'] = np.random.randint(1000, 10000, len(df))
+                
+        except Exception as ak_error:
+            print(f"AKShare数据获取失败: {str(ak_error)}, 使用模拟数据")
+            
+            # 生成模拟数据
+            base_price = 3500 if symbol.lower().startswith('rb') else 1000
+            dates = pd.date_range(end=pd.Timestamp.now(), periods=limit, freq='H')
+            
+            np.random.seed(42)
+            returns = np.random.normal(0.001, 0.02, limit)
+            prices = [base_price]
+            for ret in returns[1:]:
+                prices.append(prices[-1] * (1 + ret))
+            
+            df = pd.DataFrame({
+                'open': np.array(prices) * np.random.uniform(0.995, 1.005, limit),
+                'high': np.array(prices) * np.random.uniform(1.000, 1.020, limit),
+                'low': np.array(prices) * np.random.uniform(0.980, 1.000, limit),
+                'close': prices,
+                'volume': np.random.randint(1000, 10000, limit)
+            }, index=dates)
+        
+        # 生成策略信号
+        signals = strategy.generate_signals(df)
+        formatted_signals = format_signals_for_api(signals)
+        
+        # 运行回测
+        backtest_metrics = strategy.backtest(df)
+        formatted_metrics = format_backtest_metrics_for_api(backtest_metrics)
+        
+        # 准备价格数据
+        timestamps = [dt.strftime('%Y-%m-%d %H:%M:%S') for dt in df.index]
+        price_data = {
+            'timestamps': timestamps,
+            'open': df['open'].tolist(),
+            'high': df['high'].tolist(),
+            'low': df['low'].tolist(),
+            'close': df['close'].tolist(),
+            'volume': df['volume'].tolist()
+        }
+        
+        return jsonify({
+            'success': True,
+            'strategy_id': strategy_id,
+            'strategy_name': strategy.name,
+            'symbol': symbol,
+            'akshare_symbol': akshare_symbol,
+            'period': period,
+            'data_count': len(df),
+            'signals': formatted_signals,
+            'signals_count': len(signals),
+            'backtest_metrics': formatted_metrics,
+            'price_data': price_data,
+            'strategy_parameters': strategy.parameters,
+            'timestamp': beijing_now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"策略信号分析失败: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'策略信号分析失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+@app.route('/api/strategy_library/backtest', methods=['POST'])
+def run_strategy_backtest():
+    """运行策略回测"""
+    
+    try:
+        data = request.get_json()
+        
+        strategy_id = data.get('strategy_id', 'turtle_trading')
+        symbol = data.get('symbol', 'rb2405')
+        period = data.get('period', '1d')
+        start_date = data.get('start_date', '2023-01-01')
+        end_date = data.get('end_date', '2024-01-01')
+        initial_capital = float(data.get('initial_capital', 100000))
+        parameters = data.get('parameters')
+        
+        print(f"策略回测: {strategy_id}, {symbol}, {start_date} - {end_date}")
+        
+        # 获取策略实例
+        strategy = strategy_library.get_strategy(strategy_id, parameters)
+        if not strategy:
+            return jsonify({
+                'success': False,
+                'message': f'未找到策略: {strategy_id}'
+            }), 404
+        
+        # 生成回测数据（这里使用模拟数据，实际应用中应该使用历史数据）
+        dates = pd.date_range(start=start_date, end=end_date, freq='D')
+        base_price = 3500 if symbol.lower().startswith('rb') else 1000
+        
+        np.random.seed(hash(symbol) % 2**32)
+        returns = np.random.normal(0.0005, 0.015, len(dates))
+        prices = [base_price]
+        for ret in returns[1:]:
+            prices.append(prices[-1] * (1 + ret))
+        
+        df = pd.DataFrame({
+            'open': np.array(prices) * np.random.uniform(0.99, 1.01, len(dates)),
+            'high': np.array(prices) * np.random.uniform(1.00, 1.03, len(dates)),
+            'low': np.array(prices) * np.random.uniform(0.97, 1.00, len(dates)),
+            'close': prices,
+            'volume': np.random.randint(1000, 10000, len(dates))
+        }, index=dates)
+        
+        # 运行回测
+        metrics = strategy.backtest(df, initial_capital)
+        formatted_metrics = format_backtest_metrics_for_api(metrics)
+        
+        # 生成信号用于图表显示
+        signals = strategy.generate_signals(df)
+        formatted_signals = format_signals_for_api(signals)
+        
+        # 计算权益曲线
+        portfolio_values = []
+        position = 0
+        entry_price = 0
+        cash = initial_capital
+        
+        signal_index = 0
+        
+        for i, (timestamp, row) in enumerate(df.iterrows()):
+            current_price = row['close']
+            
+            # 处理信号
+            if signal_index < len(signals) and timestamp >= signals[signal_index].timestamp:
+                signal = signals[signal_index]
+                
+                if signal.action == TradingSignalAction.OPEN_LONG and position <= 0:
+                    position = 1
+                    entry_price = current_price
+                elif signal.action == TradingSignalAction.OPEN_SHORT and position >= 0:
+                    position = -1  
+                    entry_price = current_price
+                elif signal.action == TradingSignalAction.CLOSE_LONG or signal.action == TradingSignalAction.CLOSE_SHORT:
+                    position = 0
+                    entry_price = 0
+                
+                signal_index += 1
+            
+            # 计算组合价值
+            if position > 0:
+                portfolio_value = cash + (current_price - entry_price) * (initial_capital / entry_price)
+            elif position < 0:
+                portfolio_value = cash + (entry_price - current_price) * (initial_capital / entry_price)
+            else:
+                portfolio_value = cash
+            
+            portfolio_values.append(portfolio_value)
+        
+        # 准备图表数据
+        chart_data = {
+            'dates': [dt.strftime('%Y-%m-%d') for dt in df.index],
+            'prices': df['close'].tolist(),
+            'portfolio_values': portfolio_values
+        }
+        
+        return jsonify({
+            'success': True,
+            'strategy_id': strategy_id,
+            'strategy_name': strategy.name,
+            'symbol': symbol,
+            'backtest_period': f"{start_date} to {end_date}",
+            'initial_capital': initial_capital,
+            'metrics': formatted_metrics,
+            'signals': formatted_signals,
+            'chart_data': chart_data,
+            'strategy_parameters': strategy.parameters,
+            'timestamp': beijing_now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"策略回测失败: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'策略回测失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+@app.route('/api/strategy_library/compare')
+def compare_strategies():
+    """策略对比分析"""
+    
+    try:
+        # 获取请求参数
+        strategy_ids = request.args.get('strategies', 'turtle_trading,bollinger_bands,momentum').split(',')
+        symbol = request.args.get('symbol', 'rb2405')
+        period = request.args.get('period', '1d')
+        days = int(request.args.get('days', 100))
+        
+        print(f"策略对比: {strategy_ids}, {symbol}, {days}天")
+        
+        # 生成测试数据
+        dates = pd.date_range(end=pd.Timestamp.now(), periods=days, freq='D')
+        base_price = 3500 if symbol.lower().startswith('rb') else 1000
+        
+        np.random.seed(hash(symbol) % 2**32)
+        returns = np.random.normal(0.0005, 0.015, days)
+        prices = [base_price]
+        for ret in returns[1:]:
+            prices.append(prices[-1] * (1 + ret))
+        
+        df = pd.DataFrame({
+            'open': np.array(prices) * np.random.uniform(0.99, 1.01, days),
+            'high': np.array(prices) * np.random.uniform(1.00, 1.03, days),
+            'low': np.array(prices) * np.random.uniform(0.97, 1.00, days),
+            'close': prices,
+            'volume': np.random.randint(1000, 10000, days)
+        }, index=dates)
+        
+        # 运行策略比较
+        comparison_results = strategy_library.run_strategy_comparison(df, strategy_ids)
+        
+        # 格式化结果
+        formatted_results = {}
+        for strategy_id, metrics in comparison_results.items():
+            if metrics:
+                strategy = strategy_library.get_strategy(strategy_id)
+                formatted_results[strategy_id] = {
+                    'strategy_name': strategy.name if strategy else strategy_id,
+                    'strategy_type': strategy.strategy_type.value if strategy else 'Unknown',
+                    'metrics': format_backtest_metrics_for_api(metrics)
+                }
+            else:
+                formatted_results[strategy_id] = {
+                    'strategy_name': strategy_id,
+                    'strategy_type': 'Unknown',
+                    'metrics': None,
+                    'error': '回测失败'
+                }
+        
+        # 找出最佳策略
+        best_strategy_id, best_metrics = strategy_library.get_best_strategy(df, strategy_ids)
+        
+        return jsonify({
+            'success': True,
+            'symbol': symbol,
+            'period': period,
+            'test_days': days,
+            'strategies_tested': len(strategy_ids),
+            'comparison_results': formatted_results,
+            'best_strategy': {
+                'strategy_id': best_strategy_id,
+                'metrics': format_backtest_metrics_for_api(best_metrics) if best_metrics else None
+            },
+            'timestamp': beijing_now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"策略对比失败: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'策略对比失败: {str(e)}',
             'timestamp': beijing_now().isoformat()
         }), 500
 
