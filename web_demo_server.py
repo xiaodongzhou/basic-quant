@@ -1438,6 +1438,96 @@ def get_technical_indicators():
 # 模拟数据生成函数已删除 - 只使用真实数据
 
 
+@app.route('/api/futures/supertrend')
+def get_supertrend_data():
+    """获取超级趋势指标数据"""
+    
+    try:
+        # 获取请求参数
+        symbol = request.args.get('symbol', 'rb2405')
+        period = request.args.get('period', '1h')
+        limit = int(request.args.get('limit', 100))
+        atr_period = int(request.args.get('atr_period', 10))
+        multiplier = float(request.args.get('multiplier', 3.0))
+        
+        print(f"获取SuperTrend数据: symbol={symbol}, period={period}, atr_period={atr_period}, multiplier={multiplier}")
+        
+        # 内部调用K线数据API获取基础数据
+        from flask import current_app
+        with current_app.test_request_context(f'/api/futures/kline_data?symbol={symbol}&period={period}&limit={limit}'):
+            kline_response = get_futures_kline_data()
+            kline_data = kline_response.get_json()
+            
+            if not kline_data.get('success'):
+                raise Exception(f"获取K线数据失败: {kline_data.get('message', '未知错误')}")
+            
+            # 将K线数据转换为DataFrame
+            kline_items = kline_data['data']['kline_data']
+            df_data = {
+                'open': [item['open'] for item in kline_items],
+                'high': [item['high'] for item in kline_items],
+                'low': [item['low'] for item in kline_items],
+                'close': [item['close'] for item in kline_items],
+                'volume': [item['volume'] for item in kline_items]
+            }
+            
+            # 构建时间索引
+            timestamps = [pd.to_datetime(item['timestamp']) for item in kline_items]
+            df = pd.DataFrame(df_data, index=timestamps)
+            
+            print(f"✅ 使用K线数据计算SuperTrend，数据点数: {len(df)}")
+        
+        # 导入趋势分析器
+        from core.trend_analyzers import SuperTrendAnalyzer
+        
+        # 创建SuperTrend分析器
+        analyzer = SuperTrendAnalyzer(atr_period=atr_period, multiplier=multiplier)
+        
+        # 计算SuperTrend
+        supertrend_result = analyzer.calculate(df)
+        
+        # 准备返回数据
+        result_data = {
+            'symbol': symbol,
+            'period': period,
+            'data_count': len(supertrend_result['supertrend_line']),
+            'supertrend': {
+                'line': supertrend_result['supertrend_line'],
+                'upper_band': supertrend_result['supertrend_upper'],
+                'lower_band': supertrend_result['supertrend_lower'],
+                'trend_direction': supertrend_result['trend_direction'],
+                'current_trend': supertrend_result['current_trend'],
+                'trend_changes': supertrend_result['trend_changes'],
+                'trend_strength': supertrend_result['trend_strength']
+            },
+            'timestamps': supertrend_result['timestamps'],
+            'parameters': {
+                'atr_period': atr_period,
+                'multiplier': multiplier
+            },
+            'price_data': {
+                'close': df['close'].tolist(),
+                'high': df['high'].tolist(),
+                'low': df['low'].tolist(),
+                'open': df['open'].tolist()
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': result_data,
+            'timestamp': beijing_now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"获取SuperTrend数据失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'获取SuperTrend数据失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
 @app.route('/api/strategy_library/list')
 def get_strategy_library():
     """获取策略库列表"""

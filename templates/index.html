@@ -749,6 +749,7 @@
                                 <button id="btn-obv" class="btn-chart-type" onclick="toggleIndicator('obv')" style="margin-right: 5px;">OBV</button>
                                 <button id="btn-vrsi" class="btn-chart-type" onclick="toggleIndicator('vrsi')" style="margin-right: 5px;">VRSI</button>
                                 <button class="btn" onclick="refreshIndicators()" style="margin-left: 10px;">🔄 刷新指标</button>
+                                <button id="btn-supertrend" class="btn" onclick="toggleSupertrend()" style="margin-left: 10px; background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%);">SuperTrend</button>
                             </div>
                         </div>
                         
@@ -3508,6 +3509,214 @@
                 });
             });
         });
+        
+        // ========== SuperTrend功能 ==========
+        
+        let supertrendEnabled = false;
+        let supertrendChart = null;
+        
+        // 切换SuperTrend显示
+        function toggleSupertrend() {
+            console.log('🔄 切换SuperTrend显示');
+            
+            const button = document.getElementById('btn-supertrend');
+            
+            if (!supertrendEnabled) {
+                // 启用SuperTrend
+                loadSupertrendData();
+                button.textContent = 'SuperTrend (已启用)';
+                button.style.background = 'linear-gradient(135deg, #48bb78 0%, #68d391 100%)';
+                supertrendEnabled = true;
+            } else {
+                // 禁用SuperTrend
+                removeSupertrendFromChart();
+                button.textContent = 'SuperTrend';
+                button.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%)';
+                supertrendEnabled = false;
+            }
+        }
+        
+        // 加载SuperTrend数据
+        async function loadSupertrendData() {
+            try {
+                // 获取当前合约信息
+                let symbol = 'rb2405';
+                let symbolName = '螺纹钢';
+                let period = '1h';
+                
+                // 优先级检测：选中任务 > 合约选择器 > 默认
+                const selectedTask = document.querySelector('.task-item.selected');
+                if (selectedTask && selectedTask.dataset.symbol) {
+                    symbol = selectedTask.dataset.symbol;
+                    symbolName = selectedTask.dataset.symbolName;
+                    period = selectedTask.dataset.period || '1h';
+                    console.log(`📊 [优先级1] 从选中任务获取: ${symbol} (${symbolName}), 周期: ${period}`);
+                } else {
+                    const contractSelect = document.getElementById('contract-select');
+                    if (contractSelect && contractSelect.value) {
+                        symbol = contractSelect.value;
+                        symbolName = contractSelect.options[contractSelect.selectedIndex].text;
+                        console.log(`📊 [优先级2] 从合约选择器获取: ${symbol} (${symbolName})`);
+                    }
+                }
+                
+                console.log(`🎆 加载SuperTrend数据: ${symbol} (${symbolName}), 周期: ${period}`);
+                
+                // 调用SuperTrend API
+                const apiUrl = `/api/futures/supertrend?symbol=${symbol}&period=${period}&limit=100&atr_period=10&multiplier=3.0`;
+                console.log(`🌐 SuperTrend API调用: ${apiUrl}`);
+                
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ SuperTrend数据获取成功', data);
+                    displaySupertrendOnChart(data.data);
+                } else {
+                    console.error('❌ SuperTrend数据获取失败:', data.message);
+                    alert('获取SuperTrend数据失败: ' + data.message);
+                }
+                
+            } catch (error) {
+                console.error('❌ SuperTrend加载错误:', error);
+                alert('SuperTrend加载错误: ' + error.message);
+            }
+        }
+        
+        // 在图表上显示SuperTrend
+        function displaySupertrendOnChart(supertrendData) {
+            const canvas = document.getElementById('liveChart');
+            if (!canvas || !window.liveChart) {
+                console.error('❌ K线图表未初始化');
+                return;
+            }
+            
+            try {
+                const chart = window.liveChart;
+                const supertrend = supertrendData.supertrend;
+                
+                console.log(`📊 在K线图上显示SuperTrend: 数据点数=${supertrend.line.length}`);
+                
+                // 准备SuperTrend线数据
+                const supertrendLineData = [];
+                const trendChangePoints = [];
+                
+                for (let i = 0; i < supertrend.line.length; i++) {
+                    const timestamp = supertrendData.timestamps[i];
+                    const trendValue = supertrend.line[i];
+                    const trendDirection = supertrend.trend_direction[i];
+                    
+                    // SuperTrend主线数据
+                    supertrendLineData.push({
+                        x: i,
+                        y: trendValue
+                    });
+                    
+                    // 检查趋势变化点
+                    if (i > 0 && supertrend.trend_direction[i] !== supertrend.trend_direction[i-1]) {
+                        trendChangePoints.push({
+                            x: i,
+                            y: trendValue,
+                            direction: trendDirection,
+                            type: trendDirection === 1 ? '转多' : '转空'
+                        });
+                    }
+                }
+                
+                // 添加SuperTrend主线数据集
+                chart.data.datasets.push({
+                    label: 'SuperTrend',
+                    data: supertrendLineData,
+                    borderColor: '#ff6b6b',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    type: 'line'
+                });
+                
+                // 添加趋势变化点
+                if (trendChangePoints.length > 0) {
+                    chart.data.datasets.push({
+                        label: '趋势转换点',
+                        data: trendChangePoints,
+                        backgroundColor: function(context) {
+                            const point = context.raw;
+                            return point.direction === 1 ? '#48bb78' : '#f56565'; // 绿色转多，红色转空
+                        },
+                        borderColor: '#2d3748',
+                        borderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        showLine: false,
+                        type: 'scatter'
+                    });
+                }
+                
+                // 更新图表
+                chart.update();
+                
+                // 显示趋势信息
+                displaySupertrendInfo(supertrendData);
+                
+                console.log(`✅ SuperTrend显示完成: 主线${supertrendLineData.length}个点, 转换点${trendChangePoints.length}个`);
+                
+            } catch (error) {
+                console.error('❌ SuperTrend显示错误:', error);
+            }
+        }
+        
+        // 显示SuperTrend信息
+        function displaySupertrendInfo(supertrendData) {
+            const supertrend = supertrendData.supertrend;
+            const infoHtml = `
+                <div style="margin-top: 15px; padding: 10px; background: #f7fafc; border-radius: 6px; border-left: 4px solid #ff6b6b;">
+                    <h4 style="margin: 0 0 8px 0; color: #ff6b6b;">🎆 SuperTrend 信息</h4>
+                    <div style="font-size: 12px; color: #2d3748;">
+                        <div><strong>当前趋势:</strong> <span style="color: ${supertrend.current_trend === '多头' ? '#48bb78' : '#f56565'}; font-weight: bold;">${supertrend.current_trend}</span></div>
+                        <div><strong>趋势强度:</strong> ${supertrend.trend_strength}</div>
+                        <div><strong>参数:</strong> ATR周期=${supertrendData.parameters.atr_period}, 倍数=${supertrendData.parameters.multiplier}</div>
+                        <div><strong>趋势转换:</strong> ${supertrend.trend_changes.length}次</div>
+                    </div>
+                </div>
+            `;
+            
+            // 在技术指标区域显示
+            const indicatorsContainer = document.querySelector('.technical-indicators-container');
+            if (indicatorsContainer) {
+                let infoDiv = document.getElementById('supertrend-info');
+                if (!infoDiv) {
+                    infoDiv = document.createElement('div');
+                    infoDiv.id = 'supertrend-info';
+                    indicatorsContainer.appendChild(infoDiv);
+                }
+                infoDiv.innerHTML = infoHtml;
+            }
+        }
+        
+        // 从图表中移除SuperTrend
+        function removeSupertrendFromChart() {
+            if (window.liveChart) {
+                const chart = window.liveChart;
+                
+                // 移除SuperTrend相关的数据集
+                chart.data.datasets = chart.data.datasets.filter(dataset => {
+                    return !dataset.label.includes('SuperTrend') && !dataset.label.includes('趋势转换点');
+                });
+                
+                chart.update();
+                
+                // 移除信息显示
+                const infoDiv = document.getElementById('supertrend-info');
+                if (infoDiv) {
+                    infoDiv.remove();
+                }
+                
+                console.log('✅ SuperTrend已从图表中移除');
+            }
+        }
     </script>
 </body>
 </html>
