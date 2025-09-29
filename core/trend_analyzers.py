@@ -129,7 +129,7 @@ class SuperTrendAnalyzer(TrendAnalyzer):
     
     def _calculate_supertrend_custom(self, data: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """
-        自定义SuperTrend计算实现
+        改进的SuperTrend计算实现 - 更准确的算法
         基于ATR和HL2的超级趋势指标
         """
         high = data['high'].values
@@ -137,60 +137,82 @@ class SuperTrendAnalyzer(TrendAnalyzer):
         close = data['close'].values
         n = len(close)
         
-        # 计算ATR (Average True Range)
-        atr = self._calculate_atr(high, low, close)
+        # 计算ATR (Average True Range) - 使用更精确的算法
+        atr = self._calculate_atr_improved(high, low, close)
         
         # 计算HL2 (High-Low Average)
         hl2 = (high + low) / 2
         
-        # 计算上轨和下轨
-        upper_band = hl2 + (self.multiplier * atr)
-        lower_band = hl2 - (self.multiplier * atr)
+        # 计算基础上轨和下轨
+        basic_upper = hl2 + (self.multiplier * atr)
+        basic_lower = hl2 - (self.multiplier * atr)
+        
+        # 初始化最终上下轨
+        final_upper = np.full(n, np.nan)
+        final_lower = np.full(n, np.nan)
         
         # 初始化SuperTrend线和方向
         supertrend = np.full(n, np.nan)
         direction = np.full(n, 1.0)  # 1=多头, -1=空头
         
-        # 从第一个ATR周期后开始计算
+        # 从第一个有效ATR值开始计算
         start_idx = self.atr_period
         
         if start_idx < n:
-            # 初始化第一个值
-            supertrend[start_idx] = upper_band[start_idx]
-            direction[start_idx] = -1  # 初始为空头
-            
-            for i in range(start_idx + 1, n):
-                # 计算上轨和下轨的最终值
-                # 上轨修正：如果当前上轨低于前一个上轨且前一收盘价高于前一个上轨，则保持前一个上轨
-                final_upper = upper_band[i]
-                if i > start_idx and upper_band[i] < upper_band[i-1] and close[i-1] > upper_band[i-1]:
-                    final_upper = upper_band[i-1]
-                
-                # 下轨修正：如果当前下轨高于前一个下轨且前一收盘价低于前一个下轨，则保持前一个下轨
-                final_lower = lower_band[i]
-                if i > start_idx and lower_band[i] > lower_band[i-1] and close[i-1] < lower_band[i-1]:
-                    final_lower = lower_band[i-1]
-                
-                # 判断趋势方向
-                if close[i] <= final_lower:
-                    direction[i] = -1
-                    supertrend[i] = final_upper
-                elif close[i] >= final_upper:
-                    direction[i] = 1 
-                    supertrend[i] = final_lower
+            # 计算修正后的上下轨
+            for i in range(start_idx, n):
+                # 上轨修正逻辑
+                if i == start_idx:
+                    final_upper[i] = basic_upper[i]
                 else:
-                    # 保持前一个方向
-                    direction[i] = direction[i-1]
-                    if direction[i] == 1:
-                        supertrend[i] = final_lower
+                    if basic_upper[i] < final_upper[i-1] or close[i-1] > final_upper[i-1]:
+                        final_upper[i] = basic_upper[i]
                     else:
-                        supertrend[i] = final_upper
+                        final_upper[i] = final_upper[i-1]
+                
+                # 下轨修正逻辑  
+                if i == start_idx:
+                    final_lower[i] = basic_lower[i]
+                else:
+                    if basic_lower[i] > final_lower[i-1] or close[i-1] < final_lower[i-1]:
+                        final_lower[i] = basic_lower[i]
+                    else:
+                        final_lower[i] = final_lower[i-1]
+            
+            # 计算SuperTrend线和趋势方向
+            for i in range(start_idx, n):
+                if i == start_idx:
+                    # 初始趋势判断
+                    if close[i] <= final_lower[i]:
+                        direction[i] = -1  # 空头
+                        supertrend[i] = final_upper[i]
+                    else:
+                        direction[i] = 1   # 多头
+                        supertrend[i] = final_lower[i]
+                else:
+                    # 趋势判断逻辑
+                    prev_direction = direction[i-1]
+                    
+                    if prev_direction == 1:  # 之前是多头
+                        if close[i] <= final_lower[i]:
+                            direction[i] = -1  # 转为空头
+                            supertrend[i] = final_upper[i]
+                        else:
+                            direction[i] = 1   # 保持多头
+                            supertrend[i] = final_lower[i]
+                    else:  # 之前是空头
+                        if close[i] >= final_upper[i]:
+                            direction[i] = 1   # 转为多头
+                            supertrend[i] = final_lower[i]
+                        else:
+                            direction[i] = -1  # 保持空头
+                            supertrend[i] = final_upper[i]
         
         return supertrend, direction
     
     def _calculate_atr(self, high: np.ndarray, low: np.ndarray, close: np.ndarray) -> np.ndarray:
         """
-        计算ATR (Average True Range)
+        计算ATR (Average True Range) - 简单移动平均版本
         """
         n = len(close)
         tr = np.full(n, np.nan)
@@ -206,6 +228,35 @@ class SuperTrendAnalyzer(TrendAnalyzer):
         atr = np.full(n, np.nan)
         for i in range(self.atr_period, n):
             atr[i] = np.mean(tr[i-self.atr_period+1:i+1])
+        
+        return atr
+    
+    def _calculate_atr_improved(self, high: np.ndarray, low: np.ndarray, close: np.ndarray) -> np.ndarray:
+        """
+        改进的ATR计算 - 使用指数移动平均（EMA）更接近标准实现
+        """
+        n = len(close)
+        tr = np.full(n, np.nan)
+        
+        # 计算True Range
+        tr[0] = high[0] - low[0]  # 第一个值
+        for i in range(1, n):
+            hl = high[i] - low[i]  # High - Low
+            hc = abs(high[i] - close[i-1])  # |High - Previous Close|
+            lc = abs(low[i] - close[i-1])   # |Low - Previous Close|
+            tr[i] = max(hl, hc, lc)
+        
+        # 计算ATR - 使用指数移动平均
+        atr = np.full(n, np.nan)
+        alpha = 2.0 / (self.atr_period + 1)  # EMA平滑系数
+        
+        # 初始ATR值使用简单移动平均
+        if n >= self.atr_period:
+            atr[self.atr_period - 1] = np.mean(tr[:self.atr_period])
+            
+            # 后续值使用EMA
+            for i in range(self.atr_period, n):
+                atr[i] = alpha * tr[i] + (1 - alpha) * atr[i-1]
         
         return atr
     
