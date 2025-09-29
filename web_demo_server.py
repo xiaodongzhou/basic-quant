@@ -1486,16 +1486,23 @@ def get_supertrend_data():
         # 计算SuperTrend
         supertrend_result = analyzer.calculate(df)
         
-        # 准备返回数据
+        # 清理NaN值的辅助函数
+        def clean_nan_values(data):
+            """将NaN值转换为None以生成有效的JSON"""
+            if isinstance(data, list):
+                return [None if pd.isna(x) else x for x in data]
+            return data
+        
+        # 准备返回数据 - 清理NaN值
         result_data = {
             'symbol': symbol,
             'period': period,
             'data_count': len(supertrend_result['supertrend_line']),
             'supertrend': {
-                'line': supertrend_result['supertrend_line'],
-                'upper_band': supertrend_result['supertrend_upper'],
-                'lower_band': supertrend_result['supertrend_lower'],
-                'trend_direction': supertrend_result['trend_direction'],
+                'line': clean_nan_values(supertrend_result['supertrend_line']),
+                'upper_band': clean_nan_values(supertrend_result['supertrend_upper']),
+                'lower_band': clean_nan_values(supertrend_result['supertrend_lower']),
+                'trend_direction': clean_nan_values(supertrend_result['trend_direction']),
                 'current_trend': supertrend_result['current_trend'],
                 'trend_changes': supertrend_result['trend_changes'],
                 'trend_strength': supertrend_result['trend_strength']
@@ -1506,10 +1513,10 @@ def get_supertrend_data():
                 'multiplier': multiplier
             },
             'price_data': {
-                'close': df['close'].tolist(),
-                'high': df['high'].tolist(),
-                'low': df['low'].tolist(),
-                'open': df['open'].tolist()
+                'close': clean_nan_values(df['close'].tolist()),
+                'high': clean_nan_values(df['high'].tolist()),
+                'low': clean_nan_values(df['low'].tolist()),
+                'open': clean_nan_values(df['open'].tolist())
             }
         }
         
@@ -3077,13 +3084,13 @@ def main():
     
     # 启动服务器
     print("🚀 启动演示服务器...")
-    print("📊 Web界面地址: http://localhost:5022")
+    print("📊 Web界面地址: http://localhost:5023")
     print("🔄 实时数据: WebSocket连接")
     print("💻 支持功能: 市场数据、策略状态、回测系统、配置管理")
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5022, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5023, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:
