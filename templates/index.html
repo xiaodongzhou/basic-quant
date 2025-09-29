@@ -727,6 +727,8 @@
                                 <!-- 图表类型切换器 -->
                                 <button id="btn-live-line-chart" class="btn-chart-type active" onclick="switchLiveChartType('line')" style="margin-right: 5px;">📈 K线图</button>
                                 <button id="btn-live-candlestick-chart" class="btn-chart-type" onclick="switchLiveChartType('candlestick')" style="margin-right: 5px;">🕯️ 蜡烛图</button>
+                                <!-- SuperTrend控件 -->
+                                <button id="btn-supertrend" class="btn" onclick="toggleSupertrend()" style="margin-left: 10px; background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%);">SuperTrend</button>
                             </div>
                         </div>
                         <div id="live-chart-placeholder" style="height: 400px; display: flex; align-items: center; justify-content: center; color: #718096;">
@@ -749,7 +751,6 @@
                                 <button id="btn-obv" class="btn-chart-type" onclick="toggleIndicator('obv')" style="margin-right: 5px;">OBV</button>
                                 <button id="btn-vrsi" class="btn-chart-type" onclick="toggleIndicator('vrsi')" style="margin-right: 5px;">VRSI</button>
                                 <button class="btn" onclick="refreshIndicators()" style="margin-left: 10px;">🔄 刷新指标</button>
-                                <button id="btn-supertrend" class="btn" onclick="toggleSupertrend()" style="margin-left: 10px; background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%);">SuperTrend</button>
                             </div>
                         </div>
                         
@@ -898,6 +899,8 @@
                             <div style="display: inline-block; margin: 0 15px;">
                                 <button id="btn-line-chart" class="btn-chart-type active" onclick="switchBacktestChartType('line')" style="margin-right: 5px;">📈 K线图</button>
                                 <button id="btn-candlestick-chart" class="btn-chart-type" onclick="switchBacktestChartType('candlestick')" style="margin-right: 5px;">🕯️ 蜡烛图</button>
+                                <!-- SuperTrend控件 (回测) -->
+                                <button id="btn-backtest-supertrend" class="btn" onclick="toggleBacktestSupertrend()" style="margin-left: 10px; background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%);">SuperTrend</button>
                             </div>
                             <span id="backtest-chart-status" style="color: #718096; font-size: 14px;">点击按钮加载回测分析图表</span>
                         </div>
@@ -3586,13 +3589,14 @@
         // 在图表上显示SuperTrend
         function displaySupertrendOnChart(supertrendData) {
             const canvas = document.getElementById('liveChart');
-            if (!canvas || !window.liveChart) {
-                console.error('❌ K线图表未初始化');
+            if (!canvas || !currentChart) {
+                console.error('❌ K线图表未初始化 - currentChart:', !!currentChart);
+                alert('请先选择一个运行任务来显示K线图，然后再启用SuperTrend');
                 return;
             }
             
             try {
-                const chart = window.liveChart;
+                const chart = currentChart;
                 const supertrend = supertrendData.supertrend;
                 
                 console.log(`📊 在K线图上显示SuperTrend: 数据点数=${supertrend.line.length}`);
@@ -3702,8 +3706,8 @@
         
         // 从图表中移除SuperTrend
         function removeSupertrendFromChart() {
-            if (window.liveChart) {
-                const chart = window.liveChart;
+            if (currentChart) {
+                const chart = currentChart;
                 
                 // 移除SuperTrend相关的数据集
                 chart.data.datasets = chart.data.datasets.filter(dataset => {
@@ -3719,6 +3723,129 @@
                 }
                 
                 console.log('✅ SuperTrend已从图表中移除');
+            }
+        }
+        
+        // ========== 回测SuperTrend功能 ==========
+        
+        let backtestSupertrendEnabled = false;
+        
+        // 切换回测SuperTrend显示
+        function toggleBacktestSupertrend() {
+            console.log('🔄 切换回测SuperTrend显示');
+            
+            const button = document.getElementById('btn-backtest-supertrend');
+            
+            if (!backtestSupertrendEnabled) {
+                // 启用回测SuperTrend
+                loadBacktestSupertrendData();
+                button.textContent = 'SuperTrend (已启用)';
+                button.style.background = 'linear-gradient(135deg, #48bb78 0%, #68d391 100%)';
+                backtestSupertrendEnabled = true;
+            } else {
+                // 禁用回测SuperTrend
+                removeBacktestSupertrendFromChart();
+                button.textContent = 'SuperTrend';
+                button.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%)';
+                backtestSupertrendEnabled = false;
+            }
+        }
+        
+        // 加载回测SuperTrend数据
+        async function loadBacktestSupertrendData() {
+            if (!currentBacktestData) {
+                alert('请先加载回测数据');
+                return;
+            }
+            
+            try {
+                const symbol = currentBacktestData.symbol || 'rb2405';
+                const period = currentBacktestData.period || '1h';
+                
+                console.log(`🎆 加载回测SuperTrend数据: ${symbol}, 周期: ${period}`);
+                
+                const apiUrl = `/api/futures/supertrend?symbol=${symbol}&period=${period}&limit=100&atr_period=10&multiplier=3.0`;
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ 回测SuperTrend数据获取成功', data);
+                    displayBacktestSupertrendOnChart(data.data);
+                } else {
+                    console.error('❌ 回测SuperTrend数据获取失败:', data.message);
+                    alert('获取回测SuperTrend数据失败: ' + data.message);
+                }
+            } catch (error) {
+                console.error('❌ 回测SuperTrend加载错误:', error);
+                alert('回测SuperTrend加载错误: ' + error.message);
+            }
+        }
+        
+        // 在回测图表上显示SuperTrend
+        function displayBacktestSupertrendOnChart(supertrendData) {
+            if (!backtestChart) {
+                console.error('❌ 回测图表未初始化');
+                alert('请先加载回测图表，然后再启用SuperTrend');
+                return;
+            }
+            
+            try {
+                const chart = backtestChart;
+                const supertrend = supertrendData.supertrend;
+                
+                console.log(`📊 在回测图表上显示SuperTrend: 数据点数=${supertrend.line.length}`);
+                
+                // 准备SuperTrend线数据
+                const supertrendLineData = [];
+                
+                for (let i = 0; i < supertrend.line.length; i++) {
+                    const trendValue = supertrend.line[i];
+                    
+                    // SuperTrend主线数据 - 只添加非null值
+                    if (trendValue !== null && trendValue !== undefined && !isNaN(trendValue)) {
+                        supertrendLineData.push({
+                            x: i,
+                            y: trendValue
+                        });
+                    }
+                }
+                
+                // 添加SuperTrend主线数据集
+                chart.data.datasets.push({
+                    label: 'SuperTrend',
+                    data: supertrendLineData,
+                    borderColor: '#ff6b6b',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    type: 'line'
+                });
+                
+                // 更新图表
+                chart.update();
+                
+                console.log(`✅ 回测SuperTrend显示完成: ${supertrendLineData.length}个有效点`);
+                
+            } catch (error) {
+                console.error('❌ 回测SuperTrend显示错误:', error);
+            }
+        }
+        
+        // 从回测图表中移除SuperTrend
+        function removeBacktestSupertrendFromChart() {
+            if (backtestChart) {
+                const chart = backtestChart;
+                
+                // 移除SuperTrend相关的数据集
+                chart.data.datasets = chart.data.datasets.filter(dataset => {
+                    return !dataset.label.includes('SuperTrend');
+                });
+                
+                chart.update();
+                console.log('✅ 回测SuperTrend已从图表中移除');
             }
         }
     </script>
