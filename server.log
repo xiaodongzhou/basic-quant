@@ -1,13 +1,50 @@
-INFO:__main__:演示HTML模板创建完成
+/usr/local/lib/python3.12/site-packages/py_mini_racer/py_mini_racer.py:15: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
 WARNING:werkzeug:Werkzeug appears to be used in a production deployment. Consider switching to a production web server instead.
 🎯 期货量化交易系统 - 项目验收演示服务器
 ============================================================
 🚀 启动演示服务器...
-📊 Web界面地址: http://localhost:5001
+📊 Web界面地址: http://localhost:5014
 🔄 实时数据: WebSocket连接
 💻 支持功能: 市场数据、策略状态、回测系统、配置管理
 ============================================================
  * Serving Flask app 'web_demo_server'
  * Debug mode: off
-Address already in use
-Port 5001 is in use by another program. Either identify and stop that program, or start the server with a different port.
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5035
+ * Running on http://169.254.0.21:5035
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:28:34] "GET /socket.io/?EIO=4&transport=polling&t=PcF0aEU HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:28:34] "GET /socket.io/?EIO=4&transport=polling&t=PcF0aEV HTTP/1.1" 200 -
+INFO:__main__:客户端已连接
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:28:34] "POST /socket.io/?EIO=4&transport=polling&t=PcF0aHV&sid=-67RpB8mYZNoI3_pAAAA HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:28:34] "GET /socket.io/?EIO=4&transport=polling&t=PcF0aHV.0&sid=-67RpB8mYZNoI3_pAAAA HTTP/1.1" 200 -
+INFO:__main__:客户端已连接
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:28:34] "POST /socket.io/?EIO=4&transport=polling&t=PcF0aHV&sid=lrwd910xPPIP4rLmAAAB HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:28:34] "GET /socket.io/?EIO=4&transport=polling&t=PcF0aHV.0&sid=lrwd910xPPIP4rLmAAAB HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:28:35] "GET /socket.io/?EIO=4&transport=polling&t=PcF0aKZ&sid=-67RpB8mYZNoI3_pAAAA HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:28:35] "GET /socket.io/?EIO=4&transport=polling&t=PcF0aNW&sid=-67RpB8mYZNoI3_pAAAA HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:28:35] "GET /socket.io/?EIO=4&transport=polling&t=PcF0aKZ&sid=lrwd910xPPIP4rLmAAAB HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Sep/2025 06:30:47] "GET /api/futures/contracts?variety=a HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Sep/2025 06:30:57] "GET /api/futures/contracts?variety=p HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Sep/2025 06:31:06] "GET /api/futures/contracts?variety=ag HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [28/Sep/2025 06:31:09] "GET /api/futures/contracts?variety=pp HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:08] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:08] "GET /socket.io/?EIO=4&transport=polling&t=PcF2_3- HTTP/1.1" 200 -
+INFO:__main__:客户端已连接
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:09] "POST /socket.io/?EIO=4&transport=polling&t=PcF2_B6&sid=sJElegiu4QKm_imqAAAE HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:09] "GET /socket.io/?EIO=4&transport=polling&t=PcF2_B7&sid=sJElegiu4QKm_imqAAAE HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:09] "GET /socket.io/?EIO=4&transport=websocket&sid=-67RpB8mYZNoI3_pAAAA HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:10] "GET /api/futures/kline_data?symbol=rb2405&period=1h&limit=48 HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:10] "GET /socket.io/?EIO=4&transport=websocket&sid=lrwd910xPPIP4rLmAAAB HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:10] "GET /socket.io/?EIO=4&transport=polling&t=PcF2_YD&sid=sJElegiu4QKm_imqAAAE HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:10] "GET /socket.io/?EIO=4&transport=polling&t=PcF2_bA&sid=sJElegiu4QKm_imqAAAE HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:11] "GET /api/futures/contracts HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:13] "GET /api/futures/contracts HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:29] "GET /api/futures/contracts?variety=a HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:36] "GET /api/futures/contracts?variety=p HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:39:52] "GET /api/futures/contracts?variety=v HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:40:13] "GET /api/futures/contracts?variety=al HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:42:03] "GET /api/futures/contracts?variety=cu HTTP/1.1" 200 -
+INFO:werkzeug:10.12.127.136 - - [28/Sep/2025 06:42:08] "GET /api/backtest/historical_data?symbol=cu2511&period=15m&start_date=2025-08-28&end_date=2025-09-28 HTTP/1.1" 200 -

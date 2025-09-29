@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期货量化交易系统 - Phase 2.5 UI/UX优化版</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>期货量化交易系统 - Phase 2.5 UI/UX优化版 - v2.5.1</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -743,6 +746,8 @@
                                 <button id="btn-rsi" class="btn-chart-type" onclick="toggleIndicator('rsi')" style="margin-right: 5px;">RSI</button>
                                 <button id="btn-kdj" class="btn-chart-type" onclick="toggleIndicator('kdj')" style="margin-right: 5px;">KDJ</button>
                                 <button id="btn-bollinger" class="btn-chart-type" onclick="toggleIndicator('bollinger')" style="margin-right: 5px;">布林带</button>
+                                <button id="btn-obv" class="btn-chart-type" onclick="toggleIndicator('obv')" style="margin-right: 5px;">OBV</button>
+                                <button id="btn-vrsi" class="btn-chart-type" onclick="toggleIndicator('vrsi')" style="margin-right: 5px;">VRSI</button>
                                 <button class="btn" onclick="refreshIndicators()" style="margin-left: 10px;">🔄 刷新指标</button>
                             </div>
                         </div>
@@ -775,6 +780,20 @@
                                 <h4 style="margin-bottom: 10px; color: #9f7aea;">布林带 (Bollinger Bands)</h4>
                                 <canvas id="bollingerChart" width="400" height="200"></canvas>
                                 <div id="bollinger-signals" class="signal-box"></div>
+                            </div>
+                            
+                            <!-- OBV图表 -->
+                            <div class="indicator-chart" id="obv-chart-container" style="display: none;">
+                                <h4 style="margin-bottom: 10px; color: #38a169;">OBV (能量潮指标)</h4>
+                                <canvas id="obvChart" width="400" height="200"></canvas>
+                                <div id="obv-signals" class="signal-box"></div>
+                            </div>
+                            
+                            <!-- VRSI图表 -->
+                            <div class="indicator-chart" id="vrsi-chart-container" style="display: none;">
+                                <h4 style="margin-bottom: 10px; color: #d69e2e;">VRSI (成交量RSI)</h4>
+                                <canvas id="vrsiChart" width="400" height="200"></canvas>
+                                <div id="vrsi-signals" class="signal-box"></div>
                             </div>
                         </div>
                         
@@ -2917,7 +2936,7 @@
             document.getElementById(`btn-${indicatorType}`).classList.add('active');
             
             // 显示/隐藏图表容器
-            const containers = ['macd-chart-container', 'rsi-chart-container', 'kdj-chart-container', 'bollinger-chart-container'];
+            const containers = ['macd-chart-container', 'rsi-chart-container', 'kdj-chart-container', 'bollinger-chart-container', 'obv-chart-container', 'vrsi-chart-container'];
             containers.forEach(containerId => {
                 const container = document.getElementById(containerId);
                 if (container) {
@@ -3048,8 +3067,8 @@
                     indicatorsTitle.textContent = '📊 技术指标分析 (加载中...)';
                 }
                 
-                // 调用API获取技术指标数据 - 使用动态周期
-                const apiUrl = `/api/futures/technical_indicators?symbol=${symbol}&period=${period}&limit=100&indicators=macd,rsi,kdj,bollinger`;
+                // 调用API获取技术指标数据 - 使用动态周期包括OBV和VRSI
+                const apiUrl = `/api/futures/technical_indicators?symbol=${symbol}&period=${period}&limit=100&indicators=macd,rsi,kdj,bollinger,obv,vrsi`;
                 console.log(`🌐 API调用: ${apiUrl}`);
                 
                 const response = await fetch(apiUrl);
@@ -3286,6 +3305,57 @@
                                 }]
                             },
                             options: getIndicatorChartOptions('布林带指标')
+                        };
+                    }
+                    break;
+                    
+                case 'obv':
+                    if (indicators.obv) {
+                        chartConfig = {
+                            type: 'line',
+                            data: {
+                                labels: timestamps.slice(-50),
+                                datasets: [{
+                                    label: 'OBV',
+                                    data: indicators.obv.values.slice(-50),
+                                    borderColor: '#38a169',
+                                    backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                }]
+                            },
+                            options: getIndicatorChartOptions('OBV能量潮指标')
+                        };
+                    }
+                    break;
+                    
+                case 'vrsi':
+                    if (indicators.vrsi) {
+                        chartConfig = {
+                            type: 'line',
+                            data: {
+                                labels: timestamps.slice(-50),
+                                datasets: [{
+                                    label: 'VRSI',
+                                    data: indicators.vrsi.values.slice(-50),
+                                    borderColor: '#d69e2e',
+                                    backgroundColor: 'rgba(214, 158, 46, 0.1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                }]
+                            },
+                            options: {
+                                ...getIndicatorChartOptions('VRSI成交量RSI指标'),
+                                scales: {
+                                    ...getIndicatorChartOptions('VRSI成交量RSI指标').scales,
+                                    y: {
+                                        min: 0,
+                                        max: 100,
+                                        grid: { color: 'rgba(0,0,0,0.1)' },
+                                        ticks: { font: { size: 10 } }
+                                    }
+                                }
+                            }
                         };
                     }
                     break;
