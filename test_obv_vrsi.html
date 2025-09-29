@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试OBV和VRSI指标</title>
+</head>
+<body>
+    <h1>测试OBV和VRSI技术指标</h1>
+    <button onclick="testIndicators()">测试API调用</button>
+    <div id="results"></div>
+    
+    <script>
+        async function testIndicators() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '正在测试...';
+            
+            try {
+                // 测试包含OBV和VRSI的API调用
+                const response = await fetch('/api/futures/technical_indicators?symbol=rb2405&period=1h&limit=100&indicators=macd,rsi,kdj,bollinger,obv,vrsi');
+                const data = await response.json();
+                
+                console.log('API响应:', data);
+                
+                if (data.success) {
+                    let html = '<h2>✅ API调用成功！</h2>';
+                    html += '<h3>包含的指标:</h3><ul>';
+                    
+                    Object.keys(data.indicators || {}).forEach(indicator => {
+                        html += `<li><strong>${indicator.toUpperCase()}</strong>: 已计算</li>`;
+                    });
+                    
+                    html += '</ul>';
+                    
+                    // 特别检查OBV和VRSI
+                    if (data.indicators.obv) {
+                        html += '<p>🎉 <strong>OBV指标数据可用</strong></p>';
+                    } else {
+                        html += '<p>❌ OBV指标数据缺失</p>';
+                    }
+                    
+                    if (data.indicators.vrsi) {
+                        html += '<p>🎉 <strong>VRSI指标数据可用</strong></p>';
+                    } else {
+                        html += '<p>❌ VRSI指标数据缺失</p>';
+                    }
+                    
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `<h2>❌ API调用失败</h2><p>${data.message}</p>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<h2>❌ 请求错误</h2><p>${error.message}</p>`;
+                console.error('测试错误:', error);
+            }
+        }
+    </script>
+</body>
+</html>
