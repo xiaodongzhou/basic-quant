@@ -3606,14 +3606,18 @@
                     const trendValue = supertrend.line[i];
                     const trendDirection = supertrend.trend_direction[i];
                     
-                    // SuperTrend主线数据
-                    supertrendLineData.push({
-                        x: i,
-                        y: trendValue
-                    });
+                    // SuperTrend主线数据 - 只添加非null值
+                    if (trendValue !== null && trendValue !== undefined && !isNaN(trendValue)) {
+                        supertrendLineData.push({
+                            x: i,
+                            y: trendValue
+                        });
+                    }
                     
-                    // 检查趋势变化点
-                    if (i > 0 && supertrend.trend_direction[i] !== supertrend.trend_direction[i-1]) {
+                    // 检查趋势变化点 - 只在有效值时检查
+                    if (i > 0 && 
+                        trendValue !== null && trendValue !== undefined && 
+                        supertrend.trend_direction[i] !== supertrend.trend_direction[i-1]) {
                         trendChangePoints.push({
                             x: i,
                             y: trendValue,
