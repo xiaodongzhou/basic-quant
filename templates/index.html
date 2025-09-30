@@ -1274,6 +1274,10 @@
             const canvas = document.getElementById('liveChart');
             const chartTitle = document.getElementById('live-chart-title');
             
+            // 立即显示图表控件（包括SuperTrend按钮）
+            document.getElementById('live-chart-controls').style.display = 'block';
+            console.log('🔧 强制显示K线图控件（包括SuperTrend按钮）');
+            
             // 获取任务的合约信息
             const taskItem = document.querySelector(`[data-task-id="${taskId}"]`);
             if (!taskItem) {
