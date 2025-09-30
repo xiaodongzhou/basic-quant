@@ -2900,7 +2900,19 @@
                 
                 console.log('✅ 事件监听器已绑定');
             } else {
-                console.error('❌ 无法找到必要的DOM元素');
+                console.error('❌ 找不到必要的DOM元素');
+            }
+            
+            // 🔧 强制显示K线图控件（包括SuperTrend按钮）
+            setTimeout(() => {
+                const liveChartControls = document.getElementById('live-chart-controls');
+                if (liveChartControls) {
+                    liveChartControls.style.display = 'block';
+                    console.log('🔧 强制显示K线图控件（包括SuperTrend按钮）');
+                } else {
+                    console.error('❌ 找不到live-chart-controls元素');
+                }
+            }, 1000); // 1秒延迟确保DOM完全加载
             }
             
             // 初始化策略参数配置区域
