@@ -3625,10 +3625,10 @@
                     const trendValue = supertrend.line[i];
                     const trendDirection = supertrend.trend_direction[i];
                     
-                    // SuperTrend主线数据 - 只添加非null值
+                    // SuperTrend主线数据 - 保持原始索引，只在有效值时添加点
                     if (trendValue !== null && trendValue !== undefined && !isNaN(trendValue)) {
                         supertrendLineData.push({
-                            x: i,
+                            x: i,  // 保持原始数据索引，确保与K线数据对齐
                             y: trendValue
                         });
                     }
@@ -3638,12 +3638,20 @@
                         trendValue !== null && trendValue !== undefined && 
                         supertrend.trend_direction[i] !== supertrend.trend_direction[i-1]) {
                         trendChangePoints.push({
-                            x: i,
+                            x: i,  // 使用原始索引
                             y: trendValue,
                             direction: trendDirection,
                             type: trendDirection === 1 ? '转多' : '转空'
                         });
                     }
+                }
+                
+                console.log(`📊 SuperTrend数据分析: 总数据点${supertrend.line.length}, 有效值${supertrendLineData.length}, 转换点${trendChangePoints.length}`);
+                console.log(`📍 SuperTrend X轴范围: ${supertrendLineData.length > 0 ? supertrendLineData[0].x : 'N/A'} 到 ${supertrendLineData.length > 0 ? supertrendLineData[supertrendLineData.length-1].x : 'N/A'}`);
+                
+                // 调试: 显示前几个有效数据点的索引
+                if (supertrendLineData.length > 0) {
+                    console.log('🔍 SuperTrend前3个有效点:', supertrendLineData.slice(0, 3));
                 }
                 
                 // 添加SuperTrend主线数据集
@@ -3657,7 +3665,12 @@
                     tension: 0.1,
                     pointRadius: 0,
                     pointHoverRadius: 4,
-                    type: 'line'
+                    type: 'line',
+                    spanGaps: false,  // 不连接数据间隙，保持X轴对齐
+                    parsing: {
+                        xAxisKey: 'x',
+                        yAxisKey: 'y'
+                    }
                 });
                 
                 // 添加趋势变化点
