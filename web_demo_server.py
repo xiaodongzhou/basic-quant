@@ -3082,15 +3082,18 @@ def main():
     # 创建模板文件 (已有自定义模板，跳过)
     # create_demo_templates()
     
+    # 获取端口号，优先使用环境变量
+    port = int(os.environ.get('PORT', 5025))
+    
     # 启动服务器
     print("🚀 启动演示服务器...")
-    print("📊 Web界面地址: http://localhost:5023")
+    print(f"📊 Web界面地址: http://localhost:{port}")
     print("🔄 实时数据: WebSocket连接")
     print("💻 支持功能: 市场数据、策略状态、回测系统、配置管理")
     print("=" * 60)
     
     try:
-        socketio.run(app, host='0.0.0.0', port=5023, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
         print("\n👋 演示服务器已停止")
     except Exception as e:
