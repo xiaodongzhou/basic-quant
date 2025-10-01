@@ -1369,6 +1369,7 @@
                         tension: 0.4,
                         pointRadius: 1,
                         borderWidth: 2,
+                        xAxisID: 'x',        // 🎯 明确指定K线使用主X轴ID
                         yAxisID: 'y'         // 🎯 明确指定K线使用主Y轴ID
                     }]
                 },
@@ -1391,6 +1392,7 @@
                             grace: '5%'
                         },
                         x: {
+                            id: 'x',             // 🎯 明确设置X轴ID为'x'，供SuperTrend共享使用
                             title: {
                                 display: true,
                                 text: '时间'
@@ -1469,6 +1471,7 @@
                             down: '#198754',
                             unchanged: '#6c757d'
                         },
+                        xAxisID: 'x',        // 🎯 明确指定K线使用主X轴ID
                         yAxisID: 'y'         // 🎯 明确指定K线使用主Y轴ID
                     }]
                 },
@@ -1477,6 +1480,7 @@
                     maintainAspectRatio: false,
                     scales: {
                         x: {
+                            id: 'x',             // 🎯 明确设置X轴ID为'x'，供SuperTrend共享使用
                             type: 'linear',
                             position: 'bottom',
                             title: {
@@ -1712,6 +1716,7 @@
                             }
                         },
                         x: {
+                            id: 'x',             // 🎯 明确设置X轴ID为'x'，供SuperTrend共享使用
                             title: {
                                 display: true,
                                 text: '时间'
@@ -3632,11 +3637,20 @@
                 
                 console.log(`📊 在K线图上显示SuperTrend: 数据点数=${supertrend.line.length}`);
                 
+                // 🔍 获取当前K线数据的长度进行对齐验证
+                const currentKlineDataLength = chart.data.datasets[0].data.length;
+                console.log(`🔍 K线数据长度: ${currentKlineDataLength}, SuperTrend数据长度: ${supertrend.line.length}`);
+                
+                // 📊 数据长度对齐：确保SuperTrend和K线数据在相同的索引范围内
+                const dataLength = Math.min(currentKlineDataLength, supertrend.line.length);
+                console.log(`🎯 使用对齐后的数据长度: ${dataLength}`);
+                
                 // 准备SuperTrend线数据
                 const supertrendLineData = [];
                 const trendChangePoints = [];
                 
-                for (let i = 0; i < supertrend.line.length; i++) {
+                // 📊 使用对齐后的数据长度，确保SuperTrend和K线数据索引一致
+                for (let i = 0; i < dataLength; i++) {
                     const timestamp = supertrendData.timestamps[i];
                     const trendValue = supertrend.line[i];
                     const trendDirection = supertrend.trend_direction[i];
@@ -3670,8 +3684,8 @@
                     console.log('🔍 SuperTrend前3个有效点:', supertrendLineData.slice(0, 3));
                 }
                 
-                // 🔧 Y轴协调修复: 确保SuperTrend使用与K线相同的Y轴标识符
-                // 添加SuperTrend主线数据集，明确指定使用相同的Y轴
+                // 🔧 X/Y轴协调修复: 确保SuperTrend使用与K线相同的坐标轴标识符
+                // 添加SuperTrend主线数据集，明确指定使用相同的X轴和Y轴
                 chart.data.datasets.push({
                     label: 'SuperTrend',
                     data: supertrendLineData,
@@ -3683,7 +3697,8 @@
                     pointRadius: 0,
                     pointHoverRadius: 4,
                     type: 'line',
-                    spanGaps: false,  // 不连接数据间隙，保持X轴对齐
+                    spanGaps: false,  // 不连接数据间隙，保持轴对齐
+                    xAxisID: 'x',    // 🎯 明确指定使用主X轴（与K线共享）
                     yAxisID: 'y',    // 🎯 明确指定使用主Y轴（与K线共享）
                     parsing: {
                         xAxisKey: 'x',
@@ -3691,7 +3706,7 @@
                     }
                 });
                 
-                // 添加趋势变化点，也使用相同的Y轴
+                // 添加趋势变化点，也使用相同的X轴和Y轴
                 if (trendChangePoints.length > 0) {
                     chart.data.datasets.push({
                         label: '趋势转换点',
@@ -3706,33 +3721,49 @@
                         pointHoverRadius: 8,
                         showLine: false,
                         type: 'scatter',
+                        xAxisID: 'x',    // 🎯 明确指定使用主X轴（与K线共享）
                         yAxisID: 'y'     // 🎯 明确指定使用主Y轴（与K线共享）
                     });
                 }
                 
-                // 🔧 Y轴协调配置: 确保Chart.js不会自动创建新的Y轴
-                // 更新图表选项以强制共享Y轴
-                if (chart.options.scales && chart.options.scales.y) {
-                    // 保持现有Y轴配置，但确保ID一致
-                    chart.options.scales.y.id = 'y';
+                // 🔧 X/Y轴协调配置: 确保Chart.js不会自动创建新的坐标轴
+                // 更新图表选项以强制共享坐标轴
+                if (chart.options.scales) {
+                    // 确保X轴ID一致
+                    if (chart.options.scales.x) {
+                        chart.options.scales.x.id = 'x';
+                        console.log('🎯 X轴ID已确保为: x');
+                    }
                     
-                    // 添加Y轴适应性配置，确保SuperTrend和K线都能完整显示
-                    if (!chart.options.scales.y.afterFit) {
-                        chart.options.scales.y.afterFit = function(scale) {
-                            // 动态调整Y轴范围以包含所有数据
-                            console.log('🔧 Y轴自适应调整完成');
-                        };
+                    // 确保Y轴ID一致
+                    if (chart.options.scales.y) {
+                        chart.options.scales.y.id = 'y';
+                        console.log('🎯 Y轴ID已确保为: y');
+                        
+                        // 添加坐标轴适应性配置，确保SuperTrend和K线都能完整显示
+                        if (!chart.options.scales.y.afterFit) {
+                            chart.options.scales.y.afterFit = function(scale) {
+                                console.log('🔧 Y轴自适应调整完成');
+                            };
+                        }
                     }
                 }
                 
-                // 🎯 更新图表并强制重新计算Y轴范围
+                // 🎯 更新图表并强制重新计算坐标轴范围
                 chart.update('resize');  // 使用'resize'模式确保重新计算坐标轴
                 
                 // 显示趋势信息
                 displaySupertrendInfo(supertrendData);
                 
                 console.log(`✅ SuperTrend显示完成: 主线${supertrendLineData.length}个点, 转换点${trendChangePoints.length}个`);
-                console.log('🎯 Y轴协调: SuperTrend和K线共享主Y轴，避免空间压缩');
+                console.log('🎯 X/Y轴协调: SuperTrend和K线共享主坐标轴，避免空间压缩');
+                console.log(`📊 数据对齐验证: K线数据${currentKlineDataLength}个点, SuperTrend有效数据${supertrendLineData.length}个点`);
+                
+                // 🔍 验证最终的数据集配置
+                const supertrendDataset = chart.data.datasets.find(ds => ds.label === 'SuperTrend');
+                if (supertrendDataset) {
+                    console.log(`🔍 SuperTrend数据集配置: xAxisID=${supertrendDataset.xAxisID}, yAxisID=${supertrendDataset.yAxisID}`);
+                }
                 
             } catch (error) {
                 console.error('❌ SuperTrend显示错误:', error);
