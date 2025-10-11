@@ -1438,6 +1438,61 @@ def get_technical_indicators():
 # 模拟数据生成函数已删除 - 只使用真实数据
 
 
+@app.route('/api/futures/supertrend/debug')
+def debug_supertrend_calculation():
+    """调试SuperTrend计算过程"""
+    
+    try:
+        # 获取参数
+        symbol = request.args.get('symbol', 'rb2405')
+        atr_period = int(request.args.get('atr_period', 10))
+        
+        # 创建简单测试数据
+        test_data = {
+            'high': [100, 101, 102, 103, 102, 105, 104, 106, 105, 107, 108, 109, 110, 111, 112],
+            'low': [98, 99, 100, 101, 100, 103, 102, 104, 103, 105, 106, 107, 108, 109, 110],
+            'close': [99, 100, 101, 102, 101, 104, 103, 105, 104, 106, 107, 108, 109, 110, 111],
+            'open': [99, 100, 101, 102, 101, 104, 103, 105, 104, 106, 107, 108, 109, 110, 111]
+        }
+        
+        df = pd.DataFrame(test_data, index=pd.date_range('2024-01-01', periods=15, freq='H'))
+        
+        # 计算SuperTrend
+        from core.trend_analyzers import SuperTrendAnalyzer
+        analyzer = SuperTrendAnalyzer(atr_period=atr_period, multiplier=3.0)
+        result = analyzer.calculate(df)
+        
+        # 分析前N个点
+        debug_info = []
+        for i in range(min(15, len(result['supertrend_line']))):
+            value = result['supertrend_line'][i]
+            debug_info.append({
+                'index': i,
+                'is_nan': pd.isna(value) if value is not None else True,
+                'value': None if pd.isna(value) else value,
+                'should_be_nan': i < atr_period,
+                'correct': (pd.isna(value) if value is not None else True) == (i < atr_period)
+            })
+        
+        return jsonify({
+            'success': True,
+            'atr_period': atr_period,
+            'debug_info': debug_info,
+            'first_valid_expected_at': atr_period,
+            'calculation_summary': {
+                'total_points': len(result['supertrend_line']),
+                'expected_nan_count': atr_period,
+                'actual_data': result['supertrend_line'][:15]  # 显示前15个点
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
 @app.route('/api/futures/supertrend')
 def get_supertrend_data():
     """获取超级趋势指标数据"""
@@ -1531,6 +1586,193 @@ def get_supertrend_data():
         return jsonify({
             'success': False,
             'message': f'获取SuperTrend数据失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+@app.route('/api/futures/supertrend_pandas')
+def get_futures_supertrend_pandas():
+    """获取期货SuperTrend数据 - pandas-ta版本"""
+    
+    try:
+        # 获取请求参数
+        symbol = request.args.get('symbol', 'rb2405')
+        period = request.args.get('period', '1h')
+        limit = int(request.args.get('limit', 100))
+        atr_period = int(request.args.get('atr_period', 10))
+        multiplier = float(request.args.get('multiplier', 3.0))
+        
+        print(f"获取SuperTrend_Pandas数据: symbol={symbol}, period={period}, atr_period={atr_period}, multiplier={multiplier}")
+        
+        # 内部调用K线数据API获取基础数据
+        from flask import current_app
+        with current_app.test_request_context(f'/api/futures/kline_data?symbol={symbol}&period={period}&limit={limit}'):
+            kline_response = get_futures_kline_data()
+            kline_data = kline_response.get_json()
+            
+            if not kline_data.get('success'):
+                raise Exception(f"获取K线数据失败: {kline_data.get('message', '未知错误')}")
+            
+            # 将K线数据转换为DataFrame
+            kline_items = kline_data['data']['kline_data']
+            df_data = {
+                'open': [item['open'] for item in kline_items],
+                'high': [item['high'] for item in kline_items],
+                'low': [item['low'] for item in kline_items],
+                'close': [item['close'] for item in kline_items],
+                'volume': [item['volume'] for item in kline_items]
+            }
+            
+            # 构建时间索引
+            timestamps = [pd.to_datetime(item['timestamp']) for item in kline_items]
+            df = pd.DataFrame(df_data, index=timestamps)
+            
+            print(f"✅ 使用K线数据计算SuperTrend_Pandas，数据点数: {len(df)}")
+        
+        # 导入趋势分析器
+        from core.trend_analyzers import SuperTrendPandasAnalyzer
+        
+        # 创建SuperTrend_Pandas分析器
+        analyzer = SuperTrendPandasAnalyzer(atr_period=atr_period, multiplier=multiplier)
+        
+        # 计算SuperTrend_Pandas
+        supertrend_result = analyzer.calculate(df)
+        
+        # 清理NaN值的辅助函数
+        def clean_nan_values(data):
+            """将NaN值转换为None以生成有效的JSON"""
+            if isinstance(data, list):
+                return [None if pd.isna(x) else x for x in data]
+            return data
+        
+        # 清理所有数据中的NaN值
+        cleaned_result = {
+            'line': clean_nan_values(supertrend_result['supertrend_line']),
+            'upper': clean_nan_values(supertrend_result['supertrend_upper']),
+            'lower': clean_nan_values(supertrend_result['supertrend_lower']),
+            'trend_direction': clean_nan_values(supertrend_result['trend_direction']),
+            'trend_changes': supertrend_result['trend_changes'],
+            'current_trend': supertrend_result['current_trend'],
+            'parameters': supertrend_result['parameters'],
+            'source': supertrend_result['source']
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'supertrend': cleaned_result,
+                'timestamps': supertrend_result['timestamps'],
+                'symbol': symbol,
+                'period': period,
+                'parameters': {
+                    'atr_period': atr_period,
+                    'multiplier': multiplier,
+                    'source': 'pandas-ta'
+                }
+            },
+            'message': 'SuperTrend_Pandas数据获取成功',
+            'timestamp': beijing_now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"获取SuperTrend_Pandas数据失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'获取SuperTrend_Pandas数据失败: {str(e)}',
+            'timestamp': beijing_now().isoformat()
+        }), 500
+
+
+@app.route('/api/futures/my_supertrend')
+def get_futures_my_supertrend():
+    """获取期货My-SuperTrend数据 - 通达信公式版本"""
+    
+    try:
+        # 获取请求参数
+        symbol = request.args.get('symbol', 'rb2405')
+        period = request.args.get('period', '1h')
+        limit = int(request.args.get('limit', 100))
+        atr_period = int(request.args.get('atr_period', 10))
+        multiplier = float(request.args.get('multiplier', 3.0))
+        
+        print(f"获取My-SuperTrend数据: symbol={symbol}, period={period}, atr_period={atr_period}, multiplier={multiplier}")
+        
+        # 内部调用K线数据API获取基础数据
+        from flask import current_app
+        with current_app.test_request_context(f'/api/futures/kline_data?symbol={symbol}&period={period}&limit={limit}'):
+            kline_response = get_futures_kline_data()
+            kline_data = kline_response.get_json()
+            
+            if not kline_data.get('success'):
+                raise Exception(f"获取K线数据失败: {kline_data.get('message', '未知错误')}")
+            
+            # 将K线数据转换为DataFrame
+            kline_items = kline_data['data']['kline_data']
+            df_data = {
+                'open': [item['open'] for item in kline_items],
+                'high': [item['high'] for item in kline_items],
+                'low': [item['low'] for item in kline_items],
+                'close': [item['close'] for item in kline_items],
+                'volume': [item['volume'] for item in kline_items]
+            }
+            
+            # 构建时间索引
+            timestamps = [pd.to_datetime(item['timestamp']) for item in kline_items]
+            df = pd.DataFrame(df_data, index=timestamps)
+            
+            print(f"✅ 使用K线数据计算My-SuperTrend，数据点数: {len(df)}")
+        
+        # 导入My-SuperTrend分析器
+        from my_supertrend_analyzer import MySuperTrendAnalyzer
+        
+        # 创建My-SuperTrend分析器
+        analyzer = MySuperTrendAnalyzer(atr_period=atr_period, multiplier=multiplier)
+        
+        # 计算My-SuperTrend
+        supertrend_result = analyzer.calculate(df)
+        
+        # 清理NaN值的辅助函数
+        def clean_nan_values(data):
+            """将NaN值转换为None以生成有效的JSON"""
+            if isinstance(data, list):
+                return [None if pd.isna(x) else x for x in data]
+            return data
+        
+        # 清理所有数据中的NaN值
+        cleaned_result = {
+            'line': clean_nan_values(supertrend_result['supertrend_line']),
+            'upper': clean_nan_values(supertrend_result['supertrend_upper']),
+            'lower': clean_nan_values(supertrend_result['supertrend_lower']),
+            'trend_direction': clean_nan_values(supertrend_result['trend_direction']),
+            'trend_changes': supertrend_result['trend_changes'],
+            'current_trend': supertrend_result['current_trend'],
+            'parameters': supertrend_result['parameters'],
+            'source': supertrend_result['source'],
+            'signals': supertrend_result.get('signals', {})
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'supertrend': cleaned_result,
+                'timestamps': supertrend_result['timestamps'],
+                'symbol': symbol,
+                'period': period,
+                'parameters': {
+                    'atr_period': atr_period,
+                    'multiplier': multiplier,
+                    'source': '通达信公式'
+                }
+            },
+            'message': 'My-SuperTrend数据获取成功',
+            'timestamp': beijing_now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"获取My-SuperTrend数据失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'获取My-SuperTrend数据失败: {str(e)}',
             'timestamp': beijing_now().isoformat()
         }), 500
 

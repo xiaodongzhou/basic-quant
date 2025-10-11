@@ -156,7 +156,11 @@ class SuperTrendAnalyzer(TrendAnalyzer):
         direction = np.full(n, 1.0)  # 1=多头, -1=空头
         
         # 从第一个有效ATR值开始计算
+        # ATR在索引atr_period-1处开始有效，SuperTrend从atr_period开始
         start_idx = self.atr_period
+        
+        logger.info(f"SuperTrend计算: ATR周期={self.atr_period}, 开始索引={start_idx}, 数据长度={n}")
+        logger.info(f"前{start_idx}个点将为NaN，SuperTrend从索引{start_idx}开始有效")
         
         if start_idx < n:
             # 计算修正后的上下轨
@@ -304,12 +308,170 @@ class SuperTrendAnalyzer(TrendAnalyzer):
             return TrendState.SIDEWAYS.value
 
 
+class SuperTrendPandasAnalyzer(TrendAnalyzer):
+    """基于pandas-ta库的SuperTrend分析器 - 作为对比参考"""
+    
+    def __init__(self, atr_period: int = 10, multiplier: float = 3.0):
+        parameters = {
+            'atr_period': atr_period,
+            'multiplier': multiplier
+        }
+        super().__init__('SuperTrend_Pandas', parameters)
+        self.atr_period = atr_period
+        self.multiplier = multiplier
+    
+    def get_minimum_periods(self) -> int:
+        return max(20, self.atr_period + 10)
+    
+    def calculate(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        使用pandas-ta库计算SuperTrend指标
+        """
+        if not self.validate_data(data):
+            raise ValueError("数据验证失败")
+        
+        try:
+            import pandas_ta as ta
+            logger.info(f"使用pandas-ta计算SuperTrend: ATR周期={self.atr_period}, 倍数={self.multiplier}")
+            
+            # 使用pandas-ta计算SuperTrend
+            # 注意: pandas-ta使用length作为ATR周期参数
+            supertrend_data = ta.supertrend(
+                high=data['high'], 
+                low=data['low'], 
+                close=data['close'], 
+                length=self.atr_period, 
+                multiplier=self.multiplier
+            )
+            
+            if supertrend_data is None or supertrend_data.empty:
+                raise ValueError("pandas-ta SuperTrend计算失败")
+            
+            # 解析pandas-ta的返回结果
+            # 列名格式: SUPERT_{length}_{multiplier}, SUPERTd_{length}_{multiplier}, etc.
+            col_suffix = f"{self.atr_period}_{self.multiplier}"
+            
+            # 获取各个列
+            supertrend_line = supertrend_data[f'SUPERT_{col_suffix}'].values  # SuperTrend线值
+            trend_direction = supertrend_data[f'SUPERTd_{col_suffix}'].values  # 趋势方向 (1=多头, -1=空头)
+            supertrend_lower = supertrend_data[f'SUPERTl_{col_suffix}'].values  # 下轨
+            supertrend_upper = supertrend_data[f'SUPERTs_{col_suffix}'].values  # 上轨
+            
+            # 处理NaN值和方向转换
+            # pandas-ta的趋势方向: 1=多头, 0=空头，需要转换为1/-1格式
+            trend_direction_adjusted = np.where(trend_direction == 1, 1, -1)
+            
+            # 检测趋势变化点
+            trend_changes = self._detect_trend_changes(trend_direction_adjusted)
+            
+            # 生成当前趋势状态
+            valid_directions = trend_direction_adjusted[~np.isnan(trend_direction_adjusted)]
+            current_trend = self._get_trend_state(valid_directions[-1] if len(valid_directions) > 0 else 0)
+            
+            # 处理上下轨数据：pandas-ta可能返回的格式与我们的不同
+            # 如果上下轨都是NaN，则使用SuperTrend线根据方向生成
+            if np.all(np.isnan(supertrend_upper)) and np.all(np.isnan(supertrend_lower)):
+                supertrend_upper, supertrend_lower = self._calculate_bands(data, supertrend_line, trend_direction_adjusted)
+            
+            result = {
+                'supertrend_line': self._clean_nan_values(supertrend_line),
+                'supertrend_upper': self._clean_nan_values(supertrend_upper),
+                'supertrend_lower': self._clean_nan_values(supertrend_lower),
+                'trend_direction': self._clean_nan_values(trend_direction_adjusted),
+                'trend_changes': trend_changes,
+                'current_trend': current_trend,
+                'timestamps': data.index.strftime('%Y-%m-%d %H:%M:%S').tolist(),
+                'parameters': self.parameters,
+                'trend_strength': abs(valid_directions[-1]) if len(valid_directions) > 0 else 0,
+                'source': 'pandas-ta'
+            }
+            
+            logger.info(f"pandas-ta SuperTrend计算完成: 当前趋势={current_trend}, 数据点数={len(supertrend_line)}")
+            return result
+            
+        except ImportError:
+            raise ValueError("pandas-ta库未安装，无法使用SuperTrend_Pandas")
+        except Exception as e:
+            logger.error(f"pandas-ta SuperTrend计算错误: {e}")
+            raise
+    
+    def _clean_nan_values(self, data: np.ndarray) -> List:
+        """清理NaN值和numpy数据类型，转换为None/Python原生类型以适合JSON序列化"""
+        result = []
+        for x in data:
+            if pd.isna(x):
+                result.append(None)
+            elif isinstance(x, (np.integer, np.int64, np.int32)):
+                result.append(int(x))  # 转换numpy整数为Python int
+            elif isinstance(x, (np.floating, np.float64, np.float32)):
+                result.append(float(x))  # 转换numpy浮点数为Python float
+            else:
+                result.append(x)  # 其他类型保持不变
+        return result
+    
+    def _calculate_bands(self, data: pd.DataFrame, supertrend_line: np.ndarray, 
+                        trend_direction: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        计算上轨和下轨数据
+        在多头时显示下轨，在空头时显示上轨
+        """
+        n = len(supertrend_line)
+        upper_band = np.full(n, np.nan)
+        lower_band = np.full(n, np.nan)
+        
+        for i in range(n):
+            if not np.isnan(trend_direction[i]):
+                if trend_direction[i] == 1:  # 多头趋势
+                    lower_band[i] = supertrend_line[i]  # 下轨作为支撑
+                elif trend_direction[i] == -1:  # 空头趋势  
+                    upper_band[i] = supertrend_line[i]  # 上轨作为压力
+        
+        return upper_band, lower_band
+    
+    def _detect_trend_changes(self, trend_direction: np.ndarray) -> List[Dict]:
+        """检测趋势转换点"""
+        changes = []
+        
+        for i in range(1, len(trend_direction)):
+            if not np.isnan(trend_direction[i]) and not np.isnan(trend_direction[i-1]):
+                if trend_direction[i] != trend_direction[i-1]:
+                    change_type = "转多" if trend_direction[i] == 1 else "转空"
+                    changes.append({
+                        'index': i,
+                        'type': change_type,
+                        'from_trend': self._get_trend_state(trend_direction[i-1]),
+                        'to_trend': self._get_trend_state(trend_direction[i])
+                    })
+        
+        return changes
+    
+    def _get_trend_state(self, direction: float) -> str:
+        """将数值方向转换为趋势状态"""
+        if direction == 1:
+            return TrendState.BULLISH.value
+        elif direction == -1:
+            return TrendState.BEARISH.value
+        else:
+            return TrendState.SIDEWAYS.value
+
+
 class TrendAnalyzerFactory:
     """趋势分析器工厂类 - 支持动态注册和创建"""
     
     _analyzers = {
-        'supertrend': SuperTrendAnalyzer
+        'supertrend': SuperTrendAnalyzer,
+        'supertrend_pandas': SuperTrendPandasAnalyzer
     }
+    
+    @classmethod
+    def _import_my_supertrend(cls):
+        """动态导入MySuperTrend分析器"""
+        try:
+            from my_supertrend_analyzer import MySuperTrendAnalyzer
+            return MySuperTrendAnalyzer
+        except ImportError:
+            logger.error("无法导入MySuperTrendAnalyzer")
+            return None
     
     @classmethod
     def register(cls, name: str, analyzer_class):
@@ -318,8 +480,16 @@ class TrendAnalyzerFactory:
         logger.info(f"注册趋势分析器: {name}")
     
     @classmethod
-    def create(cls, name: str, **parameters) -> TrendAnalyzer:
+    def create(cls, name: str, **parameters):
         """创建趋势分析器实例"""
+        if name == 'my_supertrend':
+            # 动态导入MySuperTrend
+            my_class = cls._import_my_supertrend()
+            if my_class:
+                return my_class(**parameters)
+            else:
+                raise ValueError("MySuperTrend分析器导入失败")
+        
         if name not in cls._analyzers:
             raise ValueError(f"未知的趋势分析器: {name}")
         
@@ -328,7 +498,10 @@ class TrendAnalyzerFactory:
     @classmethod
     def list_available(cls) -> List[str]:
         """列出所有可用的趋势分析器"""
-        return list(cls._analyzers.keys())
+        available = list(cls._analyzers.keys())
+        # 添加MySuperTrend到可用列表
+        available.append('my_supertrend')
+        return available
 
 
 # 使用示例
